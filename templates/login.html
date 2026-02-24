@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/style.css" />
+    <title>Вход в систему</title>
+</head>
+<body>
+    <div class="container mt-5">
+        <form class="login_form" method="post">
+            <h2 class="form-title">Вход в систему</h2>
+            <div class="mb-3">
+                <label for="login" class="form-label">Логин</label>
+                <input type="text" class="form-control" id="login" name="login" placeholder="Введите логин" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Пароль</label>
+                <input type="password" class="form-control" id="password" name="password" placeholder="Введите пароль" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Войти</button>
+            <div class="switch-link">
+                <a href="/register">Нет аккаунта? Зарегистрироваться</a><br>
+                <a href="/reset">Забыли пароль?</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

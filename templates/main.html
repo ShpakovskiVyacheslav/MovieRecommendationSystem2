@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/style.css" />
+    <title>Главная страница</title>
+</head>
+<body>
+    <div class="header">
+        <a href="/profile/{{ login }}" style="text-decoration: none;">
+            <div class="profile-circle" title="Профиль">
+                {% if avatar_url %}
+                    <img src="/static/uploads/{{ avatar_url }}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">
+                {% else %}
+                    {{ username[0].upper() }}
+                {% endif %}
+            </div>
+        </a>
+    </div>
+
+    <div class="main-container">
+        <div class="recommended-section">
+            <h2>Рекомендованные фильмы</h2>
+            <p>Здесь скоро появятся рекомендации для вас</p>
+            <p style="font-size: 14px;">(просто текст, скоро тут будет контент)</p>
+        </div>
+
+        <div class="search-section">
+            <form class="search-box" method="get" action="/main/{{ login }}">
+                <input type="text" class="search-input" name="query" placeholder="Введите название фильма..." value="{{ query }}">
+                <button type="submit" class="search-button">Поиск</button>
+            </form>
+        </div>
+
+        {% if query %}
+        <div class="results-section">
+            <h3 class="results-title">Результаты поиска по запросу: "{{ query }}"</h3>
+            <div class="results-placeholder">
+                Здесь будут отображаться результаты поиска для: {{ query }}
+            </div>
+        </div>
+        {% else %}
+        <div class="results-section">
+            <div class="results-placeholder">
+                Результаты поиска появятся здесь
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

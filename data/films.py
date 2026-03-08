@@ -11,5 +11,6 @@ class Film(SqlAlchemyBase):
     poster = sa.Column(sa.String, nullable=True)
     description = sa.Column(sa.String, nullable=True)
     rating = sa.Column(sa.Float, nullable=True)
+    release_year = sa.Column(sa.Integer, nullable=True)
 
     genres = orm.relationship("Genre", secondary="film_genres", backref="films")

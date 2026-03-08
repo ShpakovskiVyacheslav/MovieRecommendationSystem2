@@ -14,8 +14,8 @@ class User(SqlAlchemyBase):
     hashed_password = sa.Column(sa.String, nullable=False)
     avatar = sa.Column(sa.String, nullable=True)
 
-    favorite_films = orm.relationship("Film", secondary="user_favorite", backref="favorited_by")
-    not_interested_films = orm.relationship("Film", secondary="user_not_interested", backref="not_interested_by")
+    film_relations = orm.relationship("UserFilm", backref="user", cascade="all, delete-orphan")
+    films = orm.relationship("Film", secondary="user_films", viewonly=True)
 
     def set_password(self, password):
         self.hashed_password = generate_password_hash(password)

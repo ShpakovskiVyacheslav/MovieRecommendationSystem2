@@ -21,9 +21,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 import kagglehub
 import os
 
-# загружаем датасет с Kaggle (пришлось сделать из-за размра файла, т. к. на гитхабе есть ограничение на размер файла)
-path = kagglehub.dataset_download("grouplens/movielens-20m-dataset")
-df = pd.read_csv(os.path.join(path, "rating.csv"))
+# загружаем датасет с Kaggle (пришлось сделать из-за размера файла, т. к. на гитхабе есть ограничение на размер файла)
+df = pd.read_csv("ML/ratings.csv")
 
 reader = Reader(rating_scale=(0.5, 5))
 data = Dataset.load_from_df(df[['userId', 'movieId', 'rating']], reader)
@@ -62,4 +61,7 @@ similarities = cosine_similarity(
 
 # сортируем по похожести
 top_indices = np.argsort(similarities)[::-1]
-print(top_indices)
+
+for inner_id in top_indices[:11]:
+    raw_movie_id = inner_to_raw_movie[inner_id]
+    print(f"Внутренний ID: {inner_id}  Исходный movieId: {raw_movie_id}")

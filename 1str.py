@@ -1,21 +1,40 @@
-from flask import Flask, request, render_template, redirect
+from flask import Flask, request, render_template, redirect, session, jsonify
 import random
 import os
-from styles import CSS_CONTENT  # Импортируем стили из отдельного файла
+import math
+
+from data.db_session import global_init, create_session
+from data.users import User
+from data.films import Film
+from data.genres import Genre
+from data.user_film import UserFilm
+
+from styles import CSS_CONTENT
 
 app = Flask(__name__)
+app.secret_key = '[k1l8a@\)Z}SQ2aHKCDjxFF–v#34RK'
 
-if not os.path.exists('static/css'):
-    os.makedirs('static/css')
-if not os.path.exists('static/uploads'):
-    os.makedirs('static/uploads')
+# Инициализация базы данных
+db_path = os.path.join(os.path.dirname(__file__), 'db', 'database.db')
+os.makedirs(os.path.dirname(db_path), exist_ok=True)
+global_init(db_path)
 
-# Используем импортированные стили
-with open('static/css/style.css', 'w', encoding='utf-8') as f:
+# Создание папок для статики
+static_dir = os.path.join(os.path.dirname(__file__), 'static')
+css_dir = os.path.join(static_dir, 'css')
+uploads_dir = os.path.join(static_dir, 'uploads')
+posters_dir = os.path.join(static_dir, 'posters')
+
+os.makedirs(css_dir, exist_ok=True)
+os.makedirs(uploads_dir, exist_ok=True)
+os.makedirs(posters_dir, exist_ok=True)
+
+# Сохранение CSS
+css_path = os.path.join(css_dir, 'style.css')
+with open(css_path, 'w', encoding='utf-8') as f:
     f.write(CSS_CONTENT)
 
 reset_codes = {}
-users_db = {}
 
 
 @app.route('/', methods=['POST', 'GET'])
@@ -26,8 +45,13 @@ def index():
         login = request.form.get('login')
         password = request.form.get('password')
 
-        if login in users_db and users_db[login]['password'] == password:
-            return redirect(f'/main/{login}')
+        db_sess = create_session()
+        user = db_sess.query(User).filter(User.username == login).first()
+
+        if user and user.check_password(password):
+            session['user_id'] = user.id
+            session['username'] = user.username
+            return redirect(f'/main/{user.username}')
         else:
             return '''
             <h2>Ошибка входа</h2>
@@ -36,39 +60,108 @@ def index():
             '''
 
 
-@app.route('/main/<login>', methods=['GET'])
-def main_page(login):
-    if login not in users_db:
+@app.route('/main/<username>', methods=['GET'])
+def main_page(username):
+    db_sess = create_session()
+    user = db_sess.query(User).filter(User.username == username).first()
+
+    if not user:
         return "Пользователь не найден", 404
 
-    username = users_db[login]['username']
     query = request.args.get('query', '')
-    avatar_url = users_db[login].get('avatar')
+    page = request.args.get('page', 1, type=int)
+    per_page = 15
 
-    return render_template('main.html', login=login, username=username, query=query, avatar_url=avatar_url)
+    films = []
+    total_films = 0
+    total_pages = 0
+
+    if query:
+        base_query = db_sess.query(Film).filter(
+            Film.name.ilike(f'%{query}%')
+        ).order_by(Film.rating.desc().nullslast())
+
+        total_films = base_query.count()
+        total_pages = math.ceil(total_films / per_page) if total_films > 0 else 1
+        films = base_query.offset((page - 1) * per_page).limit(per_page).all()
+
+    return render_template('main.html',
+                           login=username,
+                           username=user.username,
+                           query=query,
+                           avatar_url=user.avatar,
+                           films=films,
+                           page=page,
+                           total_pages=total_pages,
+                           total_films=total_films)
 
 
-@app.route('/profile/<login>', methods=['GET', 'POST'])
-def profile(login):
-    if login not in users_db:
+@app.route('/profile/<username>', methods=['GET', 'POST'])
+def profile(username):
+    db_sess = create_session()
+    user = db_sess.query(User).filter(User.username == username).first()
+
+    if not user:
         return "Пользователь не найден", 404
-
-    user = users_db[login]
 
     if request.method == 'POST' and 'avatar' in request.files:
         file = request.files['avatar']
         if file and file.filename:
-            filename = f"{login}_{random.randint(1000, 9999)}.jpg"
-            file.save(f'static/uploads/{filename}')
+            filename = f"{username}_{random.randint(1000, 9999)}.jpg"
+            file.save(os.path.join('static', 'uploads', filename))
 
-            old_avatar = user.get('avatar')
-            if old_avatar and os.path.exists(f'static/uploads/{old_avatar}'):
-                os.remove(f'static/uploads/{old_avatar}')
+            old_avatar = user.avatar
+            if old_avatar:
+                old_path = os.path.join('static', 'uploads', old_avatar)
+                if os.path.exists(old_path):
+                    os.remove(old_path)
 
-            users_db[login]['avatar'] = filename
-            return redirect(f'/profile/{login}')
+            user.avatar = filename
+            db_sess.commit()
+            return redirect(f'/profile/{username}')
 
-    return render_template('profile.html', login=login, user=user)
+    page_liked = request.args.get('page_liked', 1, type=int)
+    page_not_interested = request.args.get('page_not_interested', 1, type=int)
+    per_page = 15
+
+    liked_count_total = db_sess.query(UserFilm).filter(
+        UserFilm.user_id == user.id,
+        UserFilm.status == 'like'
+    ).count()
+
+    not_interested_count_total = db_sess.query(UserFilm).filter(
+        UserFilm.user_id == user.id,
+        UserFilm.status == 'not_interested'
+    ).count()
+
+    favorite_films_query = db_sess.query(Film).join(UserFilm).filter(
+        UserFilm.user_id == user.id,
+        UserFilm.status == 'like'
+    ).order_by(Film.rating.desc().nullslast())
+
+    total_pages_liked = math.ceil(liked_count_total / per_page) if liked_count_total > 0 else 1
+    favorite_films = favorite_films_query.offset((page_liked - 1) * per_page).limit(per_page).all()
+
+    not_interested_films_query = db_sess.query(Film).join(UserFilm).filter(
+        UserFilm.user_id == user.id,
+        UserFilm.status == 'not_interested'
+    ).order_by(Film.rating.desc().nullslast())
+
+    total_pages_not_interested = math.ceil(
+        not_interested_count_total / per_page) if not_interested_count_total > 0 else 1
+    not_interested_films = not_interested_films_query.offset((page_not_interested - 1) * per_page).limit(per_page).all()
+
+    return render_template('profile.html',
+                           login=username,
+                           user=user,
+                           liked_count_total=liked_count_total,
+                           not_interested_count_total=not_interested_count_total,
+                           favorite_films=favorite_films,
+                           not_interested_films=not_interested_films,
+                           page_liked=page_liked,
+                           total_pages_liked=total_pages_liked,
+                           page_not_interested=page_not_interested,
+                           total_pages_not_interested=total_pages_not_interested)
 
 
 @app.route('/register', methods=['POST', 'GET'])
@@ -89,19 +182,26 @@ def register():
             <a href="/register">Вернуться к регистрации</a>
             '''
 
-        if login in users_db:
+        db_sess = create_session()
+
+        existing_user = db_sess.query(User).filter(
+            (User.username == login) | (User.email == email)
+        ).first()
+
+        if existing_user:
             return '''
             <h2>Ошибка!</h2>
-            <p>Пользователь с таким логином уже существует</p>
+            <p>Пользователь с таким логином или email уже существует</p>
             <a href="/register">Вернуться к регистрации</a>
             '''
 
-        users_db[login] = {
-            'email': email,
-            'username': username,
-            'password': password,
-            'avatar': None
-        }
+        user = User()
+        user.username = login
+        user.email = email
+        user.set_password(password)
+
+        db_sess.add(user)
+        db_sess.commit()
 
         return f'''
         <h2>Регистрация успешна!</h2>
@@ -140,6 +240,74 @@ def reset():
         <h2>Пароль успешно изменен!</h2>
         <p>Теперь вы можете <a href="/">войти с новым паролем</a></p>
         '''
+
+
+@app.route('/api/favorites/<int:film_id>', methods=['POST', 'DELETE'])
+def add_to_favorites(film_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Необходимо войти в систему'}), 401
+
+    db_sess = create_session()
+
+    if request.method == 'DELETE':
+        user_film = db_sess.query(UserFilm).filter(
+            UserFilm.user_id == session['user_id'],
+            UserFilm.film_id == film_id
+        ).first()
+        if user_film:
+            db_sess.delete(user_film)
+            db_sess.commit()
+        return jsonify({'success': True})
+
+    data = request.get_json()
+    status = data.get('status', 'like')
+
+    film = db_sess.query(Film).get(film_id)
+    if not film:
+        return jsonify({'success': False, 'error': 'Фильм не найден'}), 404
+
+    user_film = db_sess.query(UserFilm).filter(
+        UserFilm.user_id == session['user_id'],
+        UserFilm.film_id == film_id
+    ).first()
+
+    if user_film:
+        user_film.status = status
+    else:
+        user_film = UserFilm(
+            user_id=session['user_id'],
+            film_id=film_id,
+            status=status
+        )
+        db_sess.add(user_film)
+
+    db_sess.commit()
+    return jsonify({'success': True})
+
+
+@app.route('/remove_favorite/<username>/<int:film_id>', methods=['GET'])
+def remove_favorite(username, film_id):
+    if 'user_id' not in session:
+        return redirect('/')
+
+    db_sess = create_session()
+
+    user_film = db_sess.query(UserFilm).filter(
+        UserFilm.user_id == session['user_id'],
+        UserFilm.film_id == film_id
+    ).first()
+
+    if user_film:
+        db_sess.delete(user_film)
+        db_sess.commit()
+
+    return redirect(f'/profile/{username}')
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
 
 
 if __name__ == '__main__':

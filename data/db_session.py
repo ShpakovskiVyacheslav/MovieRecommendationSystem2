@@ -2,6 +2,7 @@ import sqlalchemy as sa
 import sqlalchemy.orm as orm
 from sqlalchemy.orm import Session
 import sqlalchemy.ext.declarative as dec
+from sqlalchemy import event
 
 SqlAlchemyBase = dec.declarative_base()
 
@@ -20,6 +21,11 @@ def global_init(db_file):
     conn_str = f"sqlite:///{db_file.strip()}?check_same_thread=False"
 
     engine = sa.create_engine(conn_str, echo=False)
+
+    @event.listens_for(engine, "connect")
+    def connect(dbapi_connection, connection_record):
+        dbapi_connection.create_function("lower", 1, lambda s: s.lower() if s else s)
+
     __factory = orm.sessionmaker(bind=engine)
 
     from . import __all_models

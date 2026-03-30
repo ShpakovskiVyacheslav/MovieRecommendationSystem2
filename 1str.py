@@ -8,6 +8,7 @@ from data.users import User
 from data.films import Film
 from data.genres import Genre
 from data.user_film import UserFilm
+from sqlalchemy import case, func
 
 app = Flask(__name__)
 app.secret_key = '[k1l8a@\)Z}SQ2aHKCDjxFF–v#34RK'
@@ -70,9 +71,16 @@ def main_page(username):
     total_pages = 0
 
     if query:
+        lower_query = query.lower()
+        relevance = case(
+            (func.lower(Film.name) == lower_query, 0),
+            (func.lower(Film.name).like(f"{lower_query}%"), 1),
+            else_=2
+        )
+
         base_query = db_sess.query(Film).filter(
-            Film.name.ilike(f'%{query}%')
-        ).order_by(Film.rating.desc().nullslast())
+            func.lower(Film.name).like(f"%{lower_query}%")
+        ).order_by(relevance, Film.rating.desc().nullslast())
 
         total_films = base_query.count()
         total_pages = math.ceil(total_films / per_page) if total_films > 0 else 1

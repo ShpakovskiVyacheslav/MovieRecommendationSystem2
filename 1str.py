@@ -161,8 +161,11 @@ def profile(username):
 
 @app.route('/register', methods=['POST', 'GET'])
 def register():
+    error = None
+
     if request.method == 'GET':
-        return render_template('register.html')
+        return render_template('register.html', error=error)
+
     elif request.method == 'POST':
         email = request.form.get('email')
         username = request.form.get('username')
@@ -170,26 +173,25 @@ def register():
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
 
+        # Проверка совпадения паролей
         if password != confirm_password:
-            return '''
-            <h2>Ошибка!</h2>
-            <p>Пароли не совпадают</p>
-            <a href="/register">Вернуться к регистрации</a>
-            '''
+            error = 'Пароли не совпадают'
+            return render_template('register.html', error=error,
+                                   email=email, username=username, login=login)
 
         db_sess = create_session()
 
+        # Проверка существования пользователя
         existing_user = db_sess.query(User).filter(
             (User.username == login) | (User.email == email)
         ).first()
 
         if existing_user:
-            return '''
-            <h2>Ошибка!</h2>
-            <p>Пользователь с таким логином или email уже существует</p>
-            <a href="/register">Вернуться к регистрации</a>
-            '''
+            error = 'Пользователь с таким логином или email уже существует'
+            return render_template('register.html', error=error,
+                                   email=email, username=username, login=login)
 
+        # Создание пользователя
         user = User()
         user.username = login
         user.email = email
@@ -198,11 +200,7 @@ def register():
         db_sess.add(user)
         db_sess.commit()
 
-        return f'''
-        <h2>Регистрация успешна!</h2>
-        <p>Добро пожаловать, {username}!</p>
-        <p>Теперь вы можете <a href="/">войти в систему</a></p>
-        '''
+        return redirect(f'/main/{user.username}')
 
 
 @app.route('/reset', methods=['POST', 'GET'])

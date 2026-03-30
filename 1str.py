@@ -9,8 +9,6 @@ from data.films import Film
 from data.genres import Genre
 from data.user_film import UserFilm
 
-from styles import CSS_CONTENT
-
 app = Flask(__name__)
 app.secret_key = '[k1l8a@\)Z}SQ2aHKCDjxFF–v#34RK'
 

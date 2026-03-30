@@ -29,11 +29,6 @@ os.makedirs(css_dir, exist_ok=True)
 os.makedirs(uploads_dir, exist_ok=True)
 os.makedirs(posters_dir, exist_ok=True)
 
-# Сохранение CSS
-css_path = os.path.join(css_dir, 'style.css')
-with open(css_path, 'w', encoding='utf-8') as f:
-    f.write(CSS_CONTENT)
-
 reset_codes = {}
 
 
@@ -302,6 +297,26 @@ def remove_favorite(username, film_id):
         db_sess.commit()
 
     return redirect(f'/profile/{username}')
+
+
+@app.route('/api/user_films', methods=['GET'])
+def get_user_films():
+    if 'user_id' not in session:
+        return jsonify([])
+
+    db_sess = create_session()
+    user_films = db_sess.query(UserFilm).filter(
+        UserFilm.user_id == session['user_id']
+    ).all()
+
+    result = []
+    for uf in user_films:
+        result.append({
+            'film_id': uf.film_id,
+            'status': uf.status
+        })
+
+    return jsonify(result)
 
 
 @app.route('/logout')

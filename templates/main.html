@@ -34,9 +34,10 @@
             </form>
         </div>
 
-        {% if query %}
         <div class="results-section">
+            {% if query %}
             <h3 class="results-title">Результаты поиска: "{{ query }}"</h3>
+            {% endif %}
 
             {% if films %}
             <div class="search-stats">
@@ -102,11 +103,6 @@
             <div class="no-results">Ничего не найдено</div>
             {% endif %}
         </div>
-        {% else %}
-        <div class="results-section">
-            <div class="results-placeholder">Введите название фильма в строку поиска</div>
-        </div>
-        {% endif %}
     </div>
     <script src="/static/js/main.js"></script>
 </body>

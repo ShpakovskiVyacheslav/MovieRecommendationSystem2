@@ -15,53 +15,94 @@
 # !pip install "numpy<2"
 
 import numpy as np  # версия numpy должна быть меньше 2.0.0, например, 1.26.4
-from surprise import SVD, Dataset, Reader
-import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
-import kagglehub
+#from data.db_session import global_init, create_session
+from surprise import Dataset, Reader
+import pandas as pd
+from flask_restful import reqparse, abort, Api, Resource
+from flask import request, Flask
 import os
+import sys
 
-# загружаем датасет с Kaggle (пришлось сделать из-за размера файла, т. к. на гитхабе есть ограничение на размер файла)
-df = pd.read_csv("ML/ratings.csv")
+# Получаем путь к папке data
+current_dir = os.path.dirname(os.path.abspath(__file__))
+data_dir = os.path.join(current_dir, '..', 'data')
+
+sys.path.append(data_dir)
+
+# Теперь импортируем
+from db_session import global_init, create_session
+
+app = Flask(__name__)
+api = Api(app)
+
+
+df = pd.read_csv("ratings.csv")
 
 reader = Reader(rating_scale=(0.5, 5))
 data = Dataset.load_from_df(df[['userId', 'movieId', 'rating']], reader)
 
 trainset = data.build_full_trainset()
 
-# выбираем модель
-model = SVD()
-# обучаем модель
-model.fit(trainset)
+# Инициализация базы данных
+db_path = os.path.join(os.path.dirname(__file__), 'db', 'database.db')
+os.makedirs(os.path.dirname(db_path), exist_ok=True)
+global_init(db_path)
 
-# model.qi - получившийся матрица фильмов
-df_qi = pd.DataFrame(model.qi)
-print(df_qi.head())
-print(df_qi.shape)
+movie_vectors = np.load('movie_vectors.npy')
 
-# соотносим movieId с id в матрице фильмов
 inner_to_raw_movie = {
     inner_id: trainset.to_raw_iid(inner_id)
     for inner_id in trainset.all_items()
 }
+raw_to_inner_movie = {
+    raw_id: inner_id
+    for inner_id, raw_id in inner_to_raw_movie.items()
+}
 
-# выбираем случайный фильм к которому мы будем рекомендовать
-inner_id = np.random.randint(0, len(model.qi))
+def get_recomindations(base_films):
+    inner_ids = [raw_to_inner_movie[movie_id] for movie_id in base_films]
 
-# вектор выбранного фильма
-target_vector = model.qi[inner_id]
+    # вектор выбранного фильма
+    target_vectors = [movie_vectors[inner_id] for inner_id in inner_ids]
 
-movie_vectors = model.qi
+    average_vector = np.mean(target_vectors, axis=0)
 
-# cosine_similarity вычисляет схожесть фильмов с помощью угла между векторами фильмов
-similarities = cosine_similarity(
-    [target_vector],
-    movie_vectors
-)[0]
+    # cosine_similarity вычисляет схожесть фильмов с помощью угла между векторами фильмов
+    similarities = cosine_similarity(
+        [average_vector],
+        movie_vectors
+    )[0]
 
-# сортируем по похожести
-top_indices = np.argsort(similarities)[::-1]
+    # сортируем по похожести
+    top_indices = np.argsort(similarities)[::-1]
 
-for inner_id in top_indices[:11]:
-    raw_movie_id = inner_to_raw_movie[inner_id]
-    print(f"Внутренний ID: {inner_id}  Исходный movieId: {raw_movie_id}")
+    recommendations = []
+
+    for inner_id in top_indices:
+        raw_movie_id = inner_to_raw_movie[inner_id]
+        recommendations.append(raw_movie_id)
+        #print(f"Внутренний ID: {inner_id}  Исходный movieId: {raw_movie_id}")
+    return recommendations
+
+#print(get_recomindations([100, 250, 700, 1000, 5]))
+
+class Recommendations(Resource):
+    db_sess = create_session()
+    def get(self):
+        # Получаем user_id из аргументов запроса
+        user_id = request.args.get('user_id', type=int)
+        if not user_id:
+            return {"error": "user_id required"}, 400
+
+        favorite_films_query = db_sess.query(Film).join(UserFilm).filter(
+            UserFilm.user_id == user.id,
+            UserFilm.status == 'like'
+        ).order_by(Film.rating.desc().nullslast())
+
+        # Генерируем рекомендации
+        recs = get_recomindations(favorite_films_query)
+
+        return recs
+
+api.add_resource(Recommendations, "/api/recommendations")

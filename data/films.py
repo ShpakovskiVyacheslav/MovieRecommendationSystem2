@@ -7,6 +7,7 @@ class Film(SqlAlchemyBase):
     __tablename__ = "films"
 
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+    ml_id = sa.Column(sa.Integer, nullable=True)
     name = sa.Column(sa.String, nullable=False)
     poster = sa.Column(sa.String, nullable=True)
     description = sa.Column(sa.String, nullable=True)

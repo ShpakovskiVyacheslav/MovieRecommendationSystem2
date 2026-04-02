@@ -16,7 +16,11 @@
 
 import numpy as np  # версия numpy должна быть меньше 2.0.0, например, 1.26.4
 from sklearn.metrics.pairwise import cosine_similarity
-#from data.db_session import global_init, create_session
+from data.db_session import global_init, create_session
+from data.users import User
+from data.films import Film
+from data.genres import Genre
+from data.user_film import UserFilm
 from surprise import Dataset, Reader
 import pandas as pd
 from flask_restful import reqparse, abort, Api, Resource
@@ -31,7 +35,6 @@ data_dir = os.path.join(current_dir, '..', 'data')
 sys.path.append(data_dir)
 
 # Теперь импортируем
-from db_session import global_init, create_session
 
 app = Flask(__name__)
 api = Api(app)
@@ -88,21 +91,26 @@ def get_recomindations(base_films):
 #print(get_recomindations([100, 250, 700, 1000, 5]))
 
 class Recommendations(Resource):
-    db_sess = create_session()
     def get(self):
-        # Получаем user_id из аргументов запроса
-        user_id = request.args.get('user_id', type=int)
-        if not user_id:
-            return {"error": "user_id required"}, 400
+        db_sess = create_session()
+        try:
+            # Получаем user_id из аргументов запроса
+            user_id = request.args.get('user_id', type=int)
+            if not user_id:
+                return {"error": "user_id required"}, 400
 
-        favorite_films_query = db_sess.query(Film).join(UserFilm).filter(
-            UserFilm.user_id == user.id,
-            UserFilm.status == 'like'
-        ).order_by(Film.rating.desc().nullslast())
+            favorite_films_query = db_sess.query(Film).join(UserFilm).filter(
+                UserFilm.user_id == user_id,
+                UserFilm.status == 'like'
+            ).order_by(Film.rating.desc().nullslast())
 
-        # Генерируем рекомендации
-        recs = get_recomindations(favorite_films_query)
+            # Генерируем рекомендации
+            recs = get_recomindations(favorite_films_query)
 
-        return recs
+            return recs
+        finally:
+            db_sess.close()
+
+
 
 api.add_resource(Recommendations, "/api/recommendations")

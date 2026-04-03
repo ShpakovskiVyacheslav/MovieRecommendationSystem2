@@ -7,18 +7,39 @@
     <link rel="stylesheet" type="text/css" href="/static/css/base.css">
     <link rel="stylesheet" type="text/css" href="/static/css/auth.css">
     <title>Вход в систему</title>
+    <style>
+        .alert {
+            margin-bottom: 20px;
+            padding: 12px;
+            border-radius: 5px;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-5">
         <form class="login_form" method="post">
             <h2 class="form-title">Вход в систему</h2>
+
+            {% if error %}
+            <div class="alert alert-error">
+                {{ error }}
+            </div>
+            {% endif %}
+
             <div class="mb-3">
                 <label for="login" class="form-label">Логин</label>
-                <input type="text" class="form-control" id="login" name="login" placeholder="Введите логин" required>
+                <input type="text" class="form-control" id="login" name="login"
+                       placeholder="Введите логин" value="{{ login or '' }}" required>
             </div>
             <div class="mb-3">
                 <label for="password" class="form-label">Пароль</label>
-                <input type="password" class="form-control" id="password" name="password" placeholder="Введите пароль" required>
+                <input type="password" class="form-control" id="password" name="password"
+                       placeholder="Введите пароль" required>
             </div>
             <button type="submit" class="btn btn-primary w-100">Войти</button>
             <div class="switch-link">

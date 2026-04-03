@@ -2,6 +2,7 @@ from flask import Flask, request, render_template, redirect, session, jsonify
 import random
 import os
 import math
+import requests
 
 from data.db_session import global_init, create_session
 from data.users import User
@@ -22,11 +23,9 @@ global_init(db_path)
 static_dir = os.path.join(os.path.dirname(__file__), 'static')
 css_dir = os.path.join(static_dir, 'css')
 uploads_dir = os.path.join(static_dir, 'uploads')
-posters_dir = os.path.join(static_dir, 'posters')
 
 os.makedirs(css_dir, exist_ok=True)
 os.makedirs(uploads_dir, exist_ok=True)
-os.makedirs(posters_dir, exist_ok=True)
 
 reset_codes = {}
 
@@ -34,24 +33,26 @@ reset_codes = {}
 @app.route('/', methods=['POST', 'GET'])
 def index():
     if request.method == 'GET':
-        return render_template('login.html')
+        return render_template('login.html', error=None)
     elif request.method == 'POST':
         login = request.form.get('login')
         password = request.form.get('password')
 
-        db_sess = create_session()
-        user = db_sess.query(User).filter(User.username == login).first()
+        if not login or not password:
+            return render_template('login.html', error='Пожалуйста, заполните все поля')
 
-        if user and user.check_password(password):
-            session['user_id'] = user.id
-            session['username'] = user.username
-            return redirect(f'/main/{user.username}')
-        else:
-            return '''
-            <h2>Ошибка входа</h2>
-            <p>Неверный логин или пароль</p>
-            <a href="/">Попробовать снова</a>
-            '''
+        db_sess = create_session()
+        try:
+            user = db_sess.query(User).filter(User.username == login).first()
+
+            if user and user.check_password(password):
+                session['user_id'] = user.id
+                session['username'] = user.username
+                return redirect(f'/main/{user.username}')
+            else:
+                return render_template('login.html', error='Неверный логин или пароль')
+        finally:
+            db_sess.close()
 
 
 @app.route('/main/<username>', methods=['GET'])
@@ -339,6 +340,88 @@ def get_user_films():
         return jsonify(result)
     finally:
         db_sess.close()
+
+
+@app.route('/api/get_recommendations', methods=['GET'])
+def get_recommendations():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    try:
+        # Запрос к сервису рекомендаций
+        response = requests.get(
+            'http://127.0.0.1:5001/api/recommendations',
+            params={'user_id': session['user_id']},
+            timeout=30
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+
+            if data.get('recommendations'):
+                db_sess = create_session()
+                try:
+                    recommended_ml_ids = data['recommendations']
+
+                    # Получаем ID фильмов, которые пользователь уже сохранил
+                    user_films = db_sess.query(UserFilm).filter(
+                        UserFilm.user_id == session['user_id']
+                    ).all()
+                    excluded_film_ids = {uf.film_id for uf in user_films}
+
+                    # Разбиваем на части из-за ограничения SQLite
+                    chunk_size = 500
+                    all_films = []
+
+                    for i in range(0, len(recommended_ml_ids), chunk_size):
+                        chunk = recommended_ml_ids[i:i + chunk_size]
+                        films_chunk = db_sess.query(Film).filter(
+                            Film.ml_id.in_(chunk)
+                        ).all()
+                        all_films.extend(films_chunk)
+
+                    film_dict = {film.ml_id: film for film in all_films}
+
+                    result = []
+                    for ml_id in recommended_ml_ids:
+                        film = film_dict.get(ml_id)
+                        if film and film.id not in excluded_film_ids:
+                            genres = [{'id': g.id, 'name': g.name} for g in film.genres]
+                            result.append({
+                                'id': film.id,
+                                'ml_id': film.ml_id,
+                                'name': film.name,
+                                'poster': film.poster,
+                                'rating': film.rating,
+                                'release_year': film.release_year,
+                                'description': film.description,
+                                'genres': genres
+                            })
+
+                    return jsonify({
+                        'user_id': session['user_id'],
+                        'recommendations': result,
+                        'total': len(result)
+                    })
+                finally:
+                    db_sess.close()
+            else:
+                return jsonify({
+                    'user_id': session['user_id'],
+                    'recommendations': [],
+                    'message': data.get('message', 'No recommendations')
+                })
+        else:
+            return jsonify({'error': 'Не удалось получить рекомендации'}), 500
+
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Превышено время ожидания сервера', 'recommendations': []}), 200
+    except requests.exceptions.ConnectionError:
+        return jsonify(
+            {'error': 'Сервис рекомендаций недоступен. Пожалуйста, запустите rec.py и обновите страницу.',
+             'recommendations': []}), 200
+    except Exception as e:
+        return jsonify({'error': str(e), 'recommendations': []}), 200
 
 
 @app.route('/logout')

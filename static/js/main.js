@@ -1,188 +1,189 @@
-// Загрузка состояний из localStorage и сервера
-        async function loadButtonStates() {
-            var likedFilms = JSON.parse(localStorage.getItem('likedFilms') || '{}');
-            var notInterestedFilms = JSON.parse(localStorage.getItem('notInterestedFilms') || '{}');
+let allRecommendations = [];
+let currentPage = 0;
+let itemsPerPage = 10; // 2 строки по 5 фильмов
 
-            // Обновляем кнопки из localStorage
-            document.querySelectorAll('.btn-like').forEach(function(btn) {
-                var filmId = btn.getAttribute('data-film-id');
-                if (likedFilms[filmId]) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
+async function loadRecommendations() {
+    const container = document.getElementById('recommendations-container');
+    if (!container) return;
+
+    try {
+        const response = await fetch('/api/get_recommendations');
+        const data = await response.json();
+
+        if (data.error) {
+            container.innerHTML = `<p style="text-align:center; color: #ffc107;">${data.error}</p>`;
+            return;
+        }
+
+        if (data.recommendations && data.recommendations.length > 0) {
+            allRecommendations = data.recommendations;
+            currentPage = 0;
+            renderCarousel();
+        } else {
+            container.innerHTML = '<p style="text-align:center;">У вас пока нет рекомендаций. Добавьте фильмы в избранное!</p>';
+        }
+    } catch (error) {
+        container.innerHTML = '<p style="text-align:center; color: #dc3545;">Не удалось загрузить рекомендации</p>';
+    }
+}
+
+function renderCarousel() {
+    const container = document.getElementById('recommendations-container');
+    if (!container) return;
+
+    const totalPages = Math.ceil(allRecommendations.length / itemsPerPage);
+    const start = currentPage * itemsPerPage;
+    const currentFilms = allRecommendations.slice(start, start + itemsPerPage);
+
+    const firstRow = currentFilms.slice(0, 5);
+    const secondRow = currentFilms.slice(5, 10);
+
+    let html = `
+        <div class="recommendations-carousel">
+            <button class="carousel-btn" onclick="prevPage()" ${currentPage === 0 ? 'disabled' : ''}>←</button>
+            <div class="carousel-container">
+                <div class="carousel-track">
+    `;
+
+    if (firstRow.length > 0) {
+        html += `<div class="carousel-slide"><div class="recommendations-grid">`;
+        firstRow.forEach(film => { html += renderFilmCard(film); });
+        for (let i = firstRow.length; i < 5; i++) {
+            html += `<div class="film-card-placeholder" style="visibility: hidden;"></div>`;
+        }
+        html += `</div></div>`;
+    }
+
+    if (secondRow.length > 0) {
+        html += `<div class="carousel-slide"><div class="recommendations-grid" style="margin-top: 20px;">`;
+        secondRow.forEach(film => { html += renderFilmCard(film); });
+        for (let i = secondRow.length; i < 5; i++) {
+            html += `<div class="film-card-placeholder" style="visibility: hidden;"></div>`;
+        }
+        html += `</div></div>`;
+    }
+
+    html += `
+                </div>
+            </div>
+            <button class="carousel-btn" onclick="nextPage()" ${currentPage >= totalPages - 1 ? 'disabled' : ''}>→</button>
+        </div>
+        <div style="text-align: center; margin-top: 15px; color: #666; font-size: 14px;">
+            Страница ${currentPage + 1} из ${totalPages} (всего ${allRecommendations.length} фильмов)
+        </div>
+    `;
+
+    container.innerHTML = html;
+    loadButtonStates();
+}
+
+function renderFilmCard(film) {
+    let genresHtml = '';
+    if (film.genres && film.genres.length > 0) {
+        genresHtml = `<div class="film-genres">` + film.genres.map(genre =>
+            `<span class="genre-tag">${genre.name}</span>`
+        ).join('') + `</div>`;
+    }
+
+    return `
+        <div class="film-card" data-film-id="${film.id}">
+            <div class="film-poster-container">
+                ${film.poster ?
+                    `<img src="${film.poster}" alt="${film.name}" class="film-poster" 
+                        onerror="this.onerror=null; this.src='https://via.placeholder.com/300x450?text=No+Poster'">` :
+                    '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#e9ecef;"><span>Нет постера</span></div>'
                 }
+            </div>
+            <div class="film-info">
+                <div class="film-title" title="${film.name}">${film.name}</div>
+                ${film.release_year ? `<div class="film-year">Год: ${film.release_year}</div>` : ''}
+                ${film.rating ? `<div class="film-rating">★ ${film.rating.toFixed(1)}</div>` : ''}
+                ${genresHtml}
+                <div class="film-actions">
+                    <button class="btn-like" data-film-id="${film.id}">Нравится</button>
+                    <button class="btn-not-interested" data-film-id="${film.id}">Не интересно</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function prevPage() {
+    if (currentPage > 0) {
+        currentPage--;
+        renderCarousel();
+    }
+}
+
+function nextPage() {
+    const totalPages = Math.ceil(allRecommendations.length / itemsPerPage);
+    if (currentPage < totalPages - 1) {
+        currentPage++;
+        renderCarousel();
+    }
+}
+
+async function loadButtonStates() {
+    try {
+        const response = await fetch('/api/user_films');
+        const userFilms = await response.json();
+        const filmStatusMap = {};
+        userFilms.forEach(uf => { filmStatusMap[uf.film_id] = uf.status; });
+
+        document.querySelectorAll('.btn-like, .btn-not-interested').forEach(btn => {
+            const filmId = parseInt(btn.dataset.filmId);
+            const isLike = btn.classList.contains('btn-like');
+            const isActive = filmStatusMap[filmId] === (isLike ? 'like' : 'not_interested');
+
+            if (isActive) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+            btn.textContent = isLike ? 'Нравится' : 'Не интересно';
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки состояний:', error);
+    }
+}
+
+async function updateFilmStatus(filmId, action) {
+    try {
+        let response;
+        if (action === 'delete') {
+            response = await fetch(`/api/favorites/${filmId}`, { method: 'DELETE' });
+        } else {
+            response = await fetch(`/api/favorites/${filmId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: action })
             });
-
-            document.querySelectorAll('.btn-not-interested').forEach(function(btn) {
-                var filmId = btn.getAttribute('data-film-id');
-                if (notInterestedFilms[filmId]) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-
-            // Затем синхронизируем с сервером (получаем актуальное состояние)
-            try {
-                var response = await fetch('/api/user_films');
-                if (response.ok) {
-                    var data = await response.json();
-
-                    // Обновляем localStorage и кнопки из данных сервера
-                    var newLiked = {};
-                    var newNotInterested = {};
-
-                    data.forEach(function(item) {
-                        if (item.status === 'like') {
-                            newLiked[item.film_id] = true;
-                        } else if (item.status === 'not_interested') {
-                            newNotInterested[item.film_id] = true;
-                        }
-                    });
-
-                    localStorage.setItem('likedFilms', JSON.stringify(newLiked));
-                    localStorage.setItem('notInterestedFilms', JSON.stringify(newNotInterested));
-
-                    // Обновляем кнопки
-                    document.querySelectorAll('.btn-like').forEach(function(btn) {
-                        var filmId = btn.getAttribute('data-film-id');
-                        if (newLiked[filmId]) {
-                            btn.classList.add('active');
-                        } else {
-                            btn.classList.remove('active');
-                        }
-                    });
-
-                    document.querySelectorAll('.btn-not-interested').forEach(function(btn) {
-                        var filmId = btn.getAttribute('data-film-id');
-                        if (newNotInterested[filmId]) {
-                            btn.classList.add('active');
-                        } else {
-                            btn.classList.remove('active');
-                        }
-                    });
-                }
-            } catch(e) {
-                console.error('Ошибка синхронизации с сервером:', e);
-            }
         }
 
-        function handleLike(button, filmId) {
-            var isActive = button.classList.contains('active');
-            var notInterestedBtn = button.parentElement.querySelector('.btn-not-interested');
-
-            if (isActive) {
-                button.classList.remove('active');
-            } else {
-                button.classList.add('active');
-                if (notInterestedBtn && notInterestedBtn.classList.contains('active')) {
-                    notInterestedBtn.classList.remove('active');
-                }
-            }
-
-            // Обновляем localStorage и отправляем на сервер
-            if (isActive) {
-                // Удаляем лайк
-                var likedFilms = JSON.parse(localStorage.getItem('likedFilms') || '{}');
-                delete likedFilms[filmId];
-                localStorage.setItem('likedFilms', JSON.stringify(likedFilms));
-
-                updateFilmStatus(filmId, 'remove');
-            } else {
-                // Добавляем лайк
-                var likedFilms = JSON.parse(localStorage.getItem('likedFilms') || '{}');
-                likedFilms[filmId] = true;
-                localStorage.setItem('likedFilms', JSON.stringify(likedFilms));
-
-                // Удаляем из неинтересных если было
-                var notInterestedFilms = JSON.parse(localStorage.getItem('notInterestedFilms') || '{}');
-                if (notInterestedFilms[filmId]) {
-                    delete notInterestedFilms[filmId];
-                    localStorage.setItem('notInterestedFilms', JSON.stringify(notInterestedFilms));
-                }
-
-                updateFilmStatus(filmId, 'like');
-            }
+        if (response.ok) {
+            await loadButtonStates();
         }
+    } catch (error) {
+        console.error('Ошибка:', error);
+    }
+}
 
-        function handleNotInterested(button, filmId) {
-            var isActive = button.classList.contains('active');
-            var likeBtn = button.parentElement.querySelector('.btn-like');
+document.addEventListener('click', async (e) => {
+    const btn = e.target;
+    if (!btn.classList.contains('btn-like') && !btn.classList.contains('btn-not-interested')) return;
 
-            if (isActive) {
-                button.classList.remove('active');
-            } else {
-                button.classList.add('active');
-                if (likeBtn && likeBtn.classList.contains('active')) {
-                    likeBtn.classList.remove('active');
-                }
-            }
+    const filmId = btn.dataset.filmId;
+    const isActive = btn.classList.contains('active');
+    const isLike = btn.classList.contains('btn-like');
 
-            // Обновляем localStorage и отправляем на сервер
-            if (isActive) {
-                // Удаляем отметку
-                var notInterestedFilms = JSON.parse(localStorage.getItem('notInterestedFilms') || '{}');
-                delete notInterestedFilms[filmId];
-                localStorage.setItem('notInterestedFilms', JSON.stringify(notInterestedFilms));
+    if (isActive) {
+        await updateFilmStatus(filmId, 'delete');
+    } else {
+        await updateFilmStatus(filmId, isLike ? 'like' : 'not_interested');
+    }
+});
 
-                updateFilmStatus(filmId, 'remove');
-            } else {
-                // Добавляем отметку
-                var notInterestedFilms = JSON.parse(localStorage.getItem('notInterestedFilms') || '{}');
-                notInterestedFilms[filmId] = true;
-                localStorage.setItem('notInterestedFilms', JSON.stringify(notInterestedFilms));
-
-                // Удаляем из избранного если было
-                var likedFilms = JSON.parse(localStorage.getItem('likedFilms') || '{}');
-                if (likedFilms[filmId]) {
-                    delete likedFilms[filmId];
-                    localStorage.setItem('likedFilms', JSON.stringify(likedFilms));
-                }
-
-                updateFilmStatus(filmId, 'not_interested');
-            }
-        }
-
-        function updateFilmStatus(filmId, status) {
-            if (status === 'remove') {
-                fetch('/api/favorites/' + filmId, { method: 'DELETE' })
-                    .catch(function(error) { console.error('Error:', error); });
-            } else {
-                fetch('/api/favorites/' + filmId, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: status })
-                }).catch(function(error) { console.error('Error:', error); });
-            }
-        }
-
-        // Обработчики кликов
-        document.addEventListener('click', function(e) {
-            var target = e.target;
-            if (target.classList && target.classList.contains('btn-like')) {
-                var filmId = target.getAttribute('data-film-id');
-                if (filmId) {
-                    e.preventDefault();
-                    handleLike(target, filmId);
-                }
-            } else if (target.classList && target.classList.contains('btn-not-interested')) {
-                var filmId = target.getAttribute('data-film-id');
-                if (filmId) {
-                    e.preventDefault();
-                    handleNotInterested(target, filmId);
-                }
-            }
-        });
-
-        // Синхронизация с сервером при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function() {
-            loadButtonStates();
-
-            // Синхронизируем каждые 30 секунд (на случай изменений в других вкладках)
-            setInterval(loadButtonStates, 30000);
-        });
-
-        // Синхронизация при возврате на страницу (когда пользователь вернулся из профиля)
-        window.addEventListener('pageshow', function() {
-            loadButtonStates();
-        });
+document.addEventListener('DOMContentLoaded', () => {
+    loadRecommendations();
+    loadButtonStates();
+});

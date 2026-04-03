@@ -13,6 +13,7 @@
 # предварительно необходимо:
 # !pip install surprise
 # !pip install "numpy<2"
+# Также необходимо 12 ГБ оператиыной памяти (лучше 16 ГБ)
 
 import numpy as np  # версия numpy должна быть меньше 2.0.0, например, 1.26.4
 from sklearn.metrics.pairwise import cosine_similarity
@@ -34,13 +35,15 @@ data_dir = os.path.join(current_dir, '..', 'data')
 
 sys.path.append(data_dir)
 
-# Теперь импортируем
 
 app = Flask(__name__)
 api = Api(app)
 
 
-df = pd.read_csv("ratings.csv")
+df = pd.read_csv("ratings.csv",
+                 nrows=8_000_000,
+                 dtype={'userId': 'int32', 'movieId': 'int32', 'rating': 'float32'},
+                 usecols=['userId', 'movieId', 'rating'])
 
 reader = Reader(rating_scale=(0.5, 5))
 data = Dataset.load_from_df(df[['userId', 'movieId', 'rating']], reader)
@@ -48,11 +51,13 @@ data = Dataset.load_from_df(df[['userId', 'movieId', 'rating']], reader)
 trainset = data.build_full_trainset()
 
 # Инициализация базы данных
-db_path = os.path.join(os.path.dirname(__file__), 'db', 'database.db')
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+db_path = os.path.join(parent_dir, 'db', 'database.db')
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
 global_init(db_path)
 
-movie_vectors = np.load('movie_vectors.npy')
+movie_vectors = np.load('movie_vectors2.npy')
 
 inner_to_raw_movie = {
     inner_id: trainset.to_raw_iid(inner_id)
@@ -85,32 +90,47 @@ def get_recomindations(base_films):
     for inner_id in top_indices:
         raw_movie_id = inner_to_raw_movie[inner_id]
         recommendations.append(raw_movie_id)
-        #print(f"Внутренний ID: {inner_id}  Исходный movieId: {raw_movie_id}")
     return recommendations
 
-#print(get_recomindations([100, 250, 700, 1000, 5]))
 
 class Recommendations(Resource):
     def get(self):
         db_sess = create_session()
         try:
-            # Получаем user_id из аргументов запроса
             user_id = request.args.get('user_id', type=int)
             if not user_id:
                 return {"error": "user_id required"}, 400
 
-            favorite_films_query = db_sess.query(Film).join(UserFilm).filter(
+            favorite_films = db_sess.query(Film).join(UserFilm).filter(
                 UserFilm.user_id == user_id,
                 UserFilm.status == 'like'
-            ).order_by(Film.rating.desc().nullslast())
+            ).order_by(Film.rating.desc().nullslast()).all()
+
+            favorite_ml_ids = []
+            for film in favorite_films:
+                if film.ml_id and not pd.isna(film.ml_id):
+                    favorite_ml_ids.append(int(film.ml_id))
+
+            if not favorite_ml_ids:
+                return {
+                    "user_id": user_id,
+                    "message": "No valid ml_id found",
+                    "recommendations": []
+                }
 
             # Генерируем рекомендации
-            recs = get_recomindations(favorite_films_query)
+            recs = get_recomindations(favorite_ml_ids)
 
-            return recs
+            return {
+                "user_id": user_id,
+                "recommendations": recs
+            }
         finally:
             db_sess.close()
 
 
 
 api.add_resource(Recommendations, "/api/recommendations")
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5001, threaded=True, host='127.0.0.1')

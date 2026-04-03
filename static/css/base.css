@@ -33,25 +33,82 @@
 }
 
 .recommended-section {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 40px;
+    background-color: white;
+    border: 1px solid #dee2e6;
     border-radius: 10px;
+    padding: 20px;
     margin: 30px 0;
-    text-align: center;
-    min-height: 200px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.recommended-section p {
-    font-size: 18px;
-    opacity: 0.9;
+.recommended-section h2 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 22px;
+}
+
+.recommendations-carousel {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.carousel-btn {
+    width: 40px;
+    height: 40px;
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    flex-shrink: 0;
+}
+
+.carousel-btn:hover:not(:disabled) {
+    background-color: #0b5ed7;
+    transform: scale(1.05);
+}
+
+.carousel-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.carousel-container {
+    overflow: hidden;
+    flex: 1;
+}
+
+.carousel-track {
+    transition: transform 0.3s ease;
+}
+
+.carousel-slide {
+    flex-shrink: 0;
+    width: 100%;
+}
+
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
 }
 
 .search-section {
     margin: 30px 0;
+}
+
+.search-section h3 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 20px;
 }
 
 .search-box {

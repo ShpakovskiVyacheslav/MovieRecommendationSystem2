@@ -1,33 +1,16 @@
-# Для запуска использовать версию питона 3.10 или 3.11
-# Рекомендуется использовать виртуальное окружение:
-# python -m venv venv
-#
-# venv\Scripts\activate
-#
-# pip install numpy==1.26.4
-# pip install scikit-surprise
-# pip install pandas kagglehub scikit-learn
-#
-# python rec.py
-# ЛИБО запускать в ноутбуке
-# предварительно необходимо:
-# !pip install surprise
-# !pip install "numpy<2"
-# Также необходимо 12 ГБ оператиыной памяти (лучше 16 ГБ)
-
-import numpy as np  # версия numpy должна быть меньше 2.0.0, например, 1.26.4
+import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from data.db_session import global_init, create_session
 from data.users import User
 from data.films import Film
 from data.genres import Genre
 from data.user_film import UserFilm
-from surprise import Dataset, Reader
 import pandas as pd
 from flask_restful import reqparse, abort, Api, Resource
 from flask import request, Flask
 import os
 import sys
+import json
 
 # Получаем путь к папке data
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -39,17 +22,6 @@ sys.path.append(data_dir)
 app = Flask(__name__)
 api = Api(app)
 
-
-df = pd.read_csv("ratings.csv",
-                 nrows=8_000_000,
-                 dtype={'userId': 'int32', 'movieId': 'int32', 'rating': 'float32'},
-                 usecols=['userId', 'movieId', 'rating'])
-
-reader = Reader(rating_scale=(0.5, 5))
-data = Dataset.load_from_df(df[['userId', 'movieId', 'rating']], reader)
-
-trainset = data.build_full_trainset()
-
 # Инициализация базы данных
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -59,10 +31,10 @@ global_init(db_path)
 
 movie_vectors = np.load('movie_vectors2.npy')
 
-inner_to_raw_movie = {
-    inner_id: trainset.to_raw_iid(inner_id)
-    for inner_id in trainset.all_items()
-}
+with open('movie_id_mapping.json', 'r', encoding='utf-8') as f:
+    inner_to_raw_movie_str = json.load(f)
+    inner_to_raw_movie = {int(k): v for k, v in inner_to_raw_movie_str.items()}
+
 raw_to_inner_movie = {
     raw_id: inner_id
     for inner_id, raw_id in inner_to_raw_movie.items()
@@ -81,15 +53,12 @@ def get_recomindations(base_films):
         [average_vector],
         movie_vectors
     )[0]
-
     # сортируем по похожести
-    top_indices = np.argsort(similarities)[::-1]
+    top_n = 1000 # тут чуть криво работает, на выходе не 1000, а примерно 500 (top_n / 2)
+    top_indices = np.argsort(similarities)[-top_n:]
+    top_indices = top_indices[np.argsort(similarities[top_indices])[::-1]]
 
-    recommendations = []
-
-    for inner_id in top_indices:
-        raw_movie_id = inner_to_raw_movie[inner_id]
-        recommendations.append(raw_movie_id)
+    recommendations = [inner_to_raw_movie[i] for i in top_indices]
     return recommendations
 
 

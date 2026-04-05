@@ -29,7 +29,7 @@ db_path = os.path.join(parent_dir, 'db', 'database.db')
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
 global_init(db_path)
 
-movie_vectors = np.load('movie_vectors2.npy')
+movie_vectors = np.load('movie_vectors.npy')
 
 with open('movie_id_mapping.json', 'r', encoding='utf-8') as f:
     inner_to_raw_movie_str = json.load(f)

@@ -7,6 +7,7 @@ import requests
 from data.db_session import global_init, create_session
 from data.users import User
 from data.films import Film
+from data.film_genre import FilmGenre
 from data.genres import Genre
 from data.user_film import UserFilm
 from sqlalchemy import case, func
@@ -128,6 +129,11 @@ def profile(username):
         page_not_interested = request.args.get('page_not_interested', 1, type=int)
         per_page = 15
 
+        genres_str = request.args.get('genres', '')
+        selected_genres = [g.strip() for g in genres_str.split(',') if g.strip()]
+        selected_rating = request.args.get('rating', 'any')
+        selected_years = request.args.get('year', 'all')
+
         liked_count_total = db_sess.query(UserFilm).filter(
             UserFilm.user_id == user.id,
             UserFilm.status == 'like'
@@ -143,13 +149,42 @@ def profile(username):
             UserFilm.status == 'like'
         ).order_by(Film.rating.desc().nullslast())
 
-        total_pages_liked = math.ceil(liked_count_total / per_page) if liked_count_total > 0 else 1
-        favorite_films = favorite_films_query.offset((page_liked - 1) * per_page).limit(per_page).all()
-
         not_interested_films_query = db_sess.query(Film).join(UserFilm).filter(
             UserFilm.user_id == user.id,
             UserFilm.status == 'not_interested'
         ).order_by(Film.rating.desc().nullslast())
+
+        if selected_genres:
+            favorite_films_query = favorite_films_query.join(FilmGenre).filter(
+                FilmGenre.genre_id.in_(selected_genres)
+            ).order_by(Film.rating.desc().nullslast())
+
+            not_interested_films_query = not_interested_films_query.join(FilmGenre).filter(
+                FilmGenre.genre_id.in_(selected_genres)
+            ).order_by(Film.rating.desc().nullslast())
+
+        if selected_rating != "any":
+            favorite_films_query = favorite_films_query.filter(
+                Film.rating >= float(selected_rating)
+            ).order_by(Film.rating.desc().nullslast())
+
+            not_interested_films_query = not_interested_films_query.filter(
+                Film.rating >= float(selected_rating)
+            ).order_by(Film.rating.desc().nullslast())
+
+        if selected_years != "all":
+            start_year, end_year = map(int, selected_years.split('-'))
+            favorite_films_query = favorite_films_query.filter(
+                Film.release_year.between(start_year, end_year)
+            ).order_by(Film.rating.desc().nullslast())
+
+            not_interested_films_query = not_interested_films_query.filter(
+                Film.release_year.between(start_year, end_year)
+            ).order_by(Film.rating.desc().nullslast())
+
+        total_pages_liked = math.ceil(liked_count_total / per_page) if liked_count_total > 0 else 1
+        favorite_films = favorite_films_query.offset((page_liked - 1) * per_page).limit(per_page).all()
+
 
         total_pages_not_interested = math.ceil(
             not_interested_count_total / per_page) if not_interested_count_total > 0 else 1

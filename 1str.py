@@ -69,6 +69,11 @@ def main_page(username):
         page = request.args.get('page', 1, type=int)
         per_page = 15
 
+        genres_str = request.args.get('genres', '')
+        selected_genres = [g.strip() for g in genres_str.split(',') if g.strip()]
+        selected_rating = request.args.get('rating', 'any')
+        selected_years = request.args.get('year', 'all')
+
         base_query = db_sess.query(Film).order_by(Film.rating.desc().nullslast())
 
         if query:
@@ -83,6 +88,22 @@ def main_page(username):
                 func.lower(Film.name).like(f"%{lower_query}%")
             ).order_by(relevance, Film.rating.desc().nullslast())
 
+        if selected_genres:
+            base_query = base_query.join(FilmGenre).filter(
+                FilmGenre.genre_id.in_(selected_genres)
+            ).order_by(Film.rating.desc().nullslast())
+
+        if selected_rating != "any":
+            base_query = base_query.filter(
+                Film.rating >= float(int(selected_rating))
+            ).order_by(Film.rating.desc().nullslast())
+
+        if selected_years != "all":
+            start_year, end_year = map(int, selected_years.split('-'))
+            base_query = base_query.filter(
+                Film.release_year.between(start_year, end_year)
+            ).order_by(Film.rating.desc().nullslast())
+
         total_films = base_query.count()
         total_pages = math.ceil(total_films / per_page) if total_films > 0 else 1
         films = base_query.offset((page - 1) * per_page).limit(per_page).all()
@@ -94,6 +115,9 @@ def main_page(username):
                                avatar_url=user.avatar,
                                films=films,
                                page=page,
+                               rating=selected_rating,
+                               year=selected_years,
+                               genres=genres_str,
                                total_pages=total_pages,
                                total_films=total_films)
     finally:

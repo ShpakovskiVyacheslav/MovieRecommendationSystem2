@@ -291,6 +291,120 @@
     cursor: pointer;
 }
 
+.profile-filters {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #dee2e6;
+}
+
+.profile-filters h3 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.filter-group {
+    margin-bottom: 20px;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #666;
+    font-size: 14px;
+}
+
+.filter-select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    color: #333;
+    background-color: white;
+    cursor: pointer;
+}
+
+.filter-select:hover {
+    border-color: #0d6efd;
+}
+
+.filter-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.filter-tag {
+    display: inline-block;
+    background-color: #e9ecef;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+    user-select: none;
+}
+
+.filter-tag:hover {
+    background-color: #dee2e6;
+}
+
+.filter-tag.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.apply-filters-btn {
+    width: 100%;
+    padding: 10px;
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+    margin-top: 10px;
+}
+
+.apply-filters-btn:hover {
+    background-color: #0b5ed7;
+}
+
+.modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 0% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 60%;
+            max-width: 600px;
+            border-radius: 8px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: black;
+        }
+
 .results-section {
     margin-top: 30px;
     border: 2px dashed #dee2e6;

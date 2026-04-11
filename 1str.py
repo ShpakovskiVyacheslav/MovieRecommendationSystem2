@@ -74,6 +74,12 @@ def main_page(username):
         selected_rating = request.args.get('rating', 'any')
         selected_years = request.args.get('year', 'all')
 
+        session['filters'] = {
+            'genres': genres_str,
+            'rating': selected_rating,
+            'year': selected_years
+        }
+
         base_query = db_sess.query(Film).order_by(Film.rating.desc().nullslast())
 
         if query:
@@ -407,6 +413,11 @@ def get_recommendations():
         return jsonify({'error': 'Not authenticated'}), 401
 
     try:
+        filters = session.get('filters', {})
+        selected_genres = filters.get('genres', '')
+        selected_rating = filters.get('rating', 'any')
+        selected_years = filters.get('year', 'all')
+
         # Запрос к сервису рекомендаций
         response = requests.get(
             'http://127.0.0.1:5001/api/recommendations',
@@ -444,18 +455,42 @@ def get_recommendations():
                     result = []
                     for ml_id in recommended_ml_ids:
                         film = film_dict.get(ml_id)
-                        if film and film.id not in excluded_film_ids:
-                            genres = [{'id': g.id, 'name': g.name} for g in film.genres]
-                            result.append({
-                                'id': film.id,
-                                'ml_id': film.ml_id,
-                                'name': film.name,
-                                'poster': film.poster,
-                                'rating': film.rating,
-                                'release_year': film.release_year,
-                                'description': film.description,
-                                'genres': genres
-                            })
+                        # Фильтры
+                        if not film or film.id in excluded_film_ids:
+                            continue
+
+                        if selected_genres:
+                            film_genre_ids = [str(i.id) for i in film.genres]
+                            if not any(i in selected_genres for i in film_genre_ids):
+                                continue
+
+                            # 2. Фильтр по рейтингу
+                        if selected_rating != 'any':
+                            try:
+                                min_rating = float(selected_rating)
+                                if film.rating < min_rating:
+                                    continue
+                            except ValueError:
+                                pass
+
+                        if selected_years != 'all':
+                            try:
+                                start, end = map(int, selected_years.split('-'))
+                                if not (start <= film.release_year <= end):
+                                    continue
+                            except ValueError:
+                                pass
+                        genres = [{'id': g.id, 'name': g.name} for g in film.genres]
+                        result.append({
+                            'id': film.id,
+                            'ml_id': film.ml_id,
+                            'name': film.name,
+                            'poster': film.poster,
+                            'rating': film.rating,
+                            'release_year': film.release_year,
+                            'description': film.description,
+                            'genres': genres
+                        })
 
                     return jsonify({
                         'user_id': session['user_id'],

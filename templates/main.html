@@ -35,9 +35,8 @@
             <h3>Поиск фильмов</h3>
             <form class="search-box" method="get" action="/main/{{ login }}">
                 <input type="text" class="search-input" name="query" placeholder="Введите название фильма..." value="{{ query }}">
+                <button id="openModalBtn" class="search-button" type="button">Фильтры</button>
                 <button type="submit" class="search-button">Поиск</button>
-
-                <button id="openModalBtn" class="search-button" type="button">Открыть фильтры</button>
 
                 <div id="myModal" class="modal">
                     <div class="modal-content">

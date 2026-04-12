@@ -22,15 +22,7 @@
     </div>
 
     <div class="main-container">
-        <div class="recommended-section">
-            <h2>Рекомендованные фильмы</h2>
-            <div id="recommendations-container">
-                <div class="recommendations-loading" style="text-align: center; padding: 20px;">
-                    <p>Загрузка рекомендаций...</p>
-                </div>
-            </div>
-        </div>
-
+        <!-- ПОИСК - теперь сверху -->
         <div class="search-section">
             <h3>Поиск фильмов</h3>
             <form class="search-box" method="get" action="/main/{{ login }}">
@@ -179,6 +171,7 @@
             </form>
         </div>
 
+        <!-- РЕЗУЛЬТАТЫ ПОИСКА - посередине -->
         <div class="results-section">
             {% if query %}
             <h3 class="results-title">Результаты поиска: "{{ query }}"</h3>
@@ -246,6 +239,16 @@
             {% else %}
             <div class="no-results">Ничего не найдено</div>
             {% endif %}
+        </div>
+
+        <!-- РЕКОМЕНДАЦИИ - теперь внизу -->
+        <div class="recommended-section">
+            <h2>Рекомендованные фильмы</h2>
+            <div id="recommendations-container">
+                <div class="recommendations-loading" style="text-align: center; padding: 20px;">
+                    <p>Загрузка рекомендаций...</p>
+                </div>
+            </div>
         </div>
     </div>
 

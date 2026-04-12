@@ -3,6 +3,9 @@ import random
 import os
 import math
 import requests
+import smtplib
+from email.message import EmailMessage
+import time
 
 from data.db_session import global_init, create_session
 from data.users import User
@@ -15,12 +18,13 @@ from sqlalchemy import case, func
 app = Flask(__name__)
 app.secret_key = '[k1l8a@\)Z}SQ2aHKCDjxFF–v#34RK'
 
-# Инициализация базы данных
+EMAIL_ADDRESS = 'sistemarekomendacij@gmail.com'
+APP_PASSWORD = 'gpvuwkwlgvvkspww'
+
 db_path = os.path.join(os.path.dirname(__file__), 'db', 'database.db')
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
 global_init(db_path)
 
-# Создание папок для статики
 static_dir = os.path.join(os.path.dirname(__file__), 'static')
 css_dir = os.path.join(static_dir, 'css')
 uploads_dir = os.path.join(static_dir, 'uploads')
@@ -29,6 +33,23 @@ os.makedirs(css_dir, exist_ok=True)
 os.makedirs(uploads_dir, exist_ok=True)
 
 reset_codes = {}
+
+def send_reset_code(email_to, code):
+    try:
+        msg = EmailMessage()
+        msg['From'] = EMAIL_ADDRESS
+        msg['To'] = email_to
+        msg['Subject'] = 'Код для сброса пароля'
+        msg.set_content(f'Ваш код для сброса пароля: {code}\n\nКод действителен 10 минут.')
+
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(EMAIL_ADDRESS, APP_PASSWORD)
+            server.send_message(msg)
+
+        return True
+    except Exception as e:
+        print(f"Ошибка отправки: {e}")
+        return False
 
 
 @app.route('/', methods=['POST', 'GET'])
@@ -215,7 +236,6 @@ def profile(username):
         total_pages_liked = math.ceil(liked_count_total / per_page) if liked_count_total > 0 else 1
         favorite_films = favorite_films_query.offset((page_liked - 1) * per_page).limit(per_page).all()
 
-
         total_pages_not_interested = math.ceil(
             not_interested_count_total / per_page) if not_interested_count_total > 0 else 1
         not_interested_films = not_interested_films_query.offset((page_not_interested - 1) * per_page).limit(
@@ -250,7 +270,6 @@ def register():
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
 
-        # Проверка совпадения паролей
         if password != confirm_password:
             error = 'Пароли не совпадают'
             return render_template('register.html', error=error,
@@ -258,7 +277,6 @@ def register():
 
         db_sess = create_session()
         try:
-            # Проверка существования пользователя
             existing_user = db_sess.query(User).filter(
                 (User.username == login) | (User.email == email)
             ).first()
@@ -268,7 +286,6 @@ def register():
                 return render_template('register.html', error=error,
                                        email=email, username=username, login=login)
 
-            # Создание пользователя
             user = User()
             user.username = login
             user.email = email
@@ -277,7 +294,6 @@ def register():
             db_sess.add(user)
             db_sess.commit()
 
-            # Автоматический вход после регистрации
             session['user_id'] = user.id
             session['username'] = user.username
 
@@ -289,33 +305,58 @@ def register():
 @app.route('/reset', methods=['POST', 'GET'])
 def reset():
     if request.method == 'GET':
-        reset_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-        reset_codes['current'] = reset_code
-        return render_template('reset.html', reset_code=reset_code)
+        return render_template('reset_request.html')
     elif request.method == 'POST':
-        entered_code = request.form.get('reset_code')
-        new_password = request.form.get('new_password')
-        confirm_password = request.form.get('confirm_new_password')
+        email = request.form.get('email')
 
-        if entered_code != reset_codes.get('current'):
-            return '''
-            <h2>Ошибка!</h2>
-            <p>Неверный код подтверждения</p>
-            <a href="/reset">Попробовать снова</a>
-            '''
+        if not email:
+            return "Введите email", 400
 
-        if new_password != confirm_password:
-            return '''
-            <h2>Ошибка!</h2>
-            <p>Новые пароли не совпадают</p>
-            <a href="/reset">Попробовать снова</a>
-            '''
+        db_sess = create_session()
+        user = db_sess.query(User).filter(User.email == email).first()
+        db_sess.close()
 
-        reset_codes.pop('current', None)
-        return '''
-        <h2>Пароль успешно изменен!</h2>
-        <p>Теперь вы можете <a href="/">войти с новым паролем</a></p>
-        '''
+        if not user:
+            return "Пользователь с таким email не найден", 404
+
+        reset_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+        reset_codes[email] = {'code': reset_code, 'timestamp': time.time()}
+
+        if send_reset_code(email, reset_code):
+            return render_template('reset_verify.html', email=email)
+        else:
+            return "Ошибка отправки письма. Попробуйте позже.", 500
+
+
+@app.route('/reset_confirm', methods=['POST'])
+def reset_confirm():
+    email = request.form.get('email')
+    code = request.form.get('code')
+    new_password = request.form.get('new_password')
+    confirm_password = request.form.get('confirm_password')
+
+    if new_password != confirm_password:
+        return "Пароли не совпадают", 400
+
+    stored = reset_codes.get(email)
+    if not stored or stored['code'] != code:
+        return "Неверный код", 400
+
+    if time.time() - stored['timestamp'] > 600:
+        return "Код истёк. Запросите новый", 400
+
+    db_sess = create_session()
+    user = db_sess.query(User).filter(User.email == email).first()
+
+    if user:
+        user.set_password(new_password)
+        db_sess.commit()
+        del reset_codes[email]
+        db_sess.close()
+        return redirect('/')
+
+    db_sess.close()
+    return "Пользователь не найден", 404
 
 
 @app.route('/api/favorites/<int:film_id>', methods=['POST', 'DELETE'])
@@ -418,7 +459,6 @@ def get_recommendations():
         selected_rating = filters.get('rating', 'any')
         selected_years = filters.get('year', 'all')
 
-        # Запрос к сервису рекомендаций
         response = requests.get(
             'http://127.0.0.1:5001/api/recommendations',
             params={'user_id': session['user_id']},
@@ -433,13 +473,11 @@ def get_recommendations():
                 try:
                     recommended_ml_ids = data['recommendations']
 
-                    # Получаем ID фильмов, которые пользователь уже сохранил
                     user_films = db_sess.query(UserFilm).filter(
                         UserFilm.user_id == session['user_id']
                     ).all()
                     excluded_film_ids = {uf.film_id for uf in user_films}
 
-                    # Разбиваем на части из-за ограничения SQLite
                     chunk_size = 500
                     all_films = []
 
@@ -455,7 +493,6 @@ def get_recommendations():
                     result = []
                     for ml_id in recommended_ml_ids:
                         film = film_dict.get(ml_id)
-                        # Фильтры
                         if not film or film.id in excluded_film_ids:
                             continue
 
@@ -464,7 +501,6 @@ def get_recommendations():
                             if not any(i in selected_genres for i in film_genre_ids):
                                 continue
 
-                            # 2. Фильтр по рейтингу
                         if selected_rating != 'any':
                             try:
                                 min_rating = float(selected_rating)
@@ -523,6 +559,23 @@ def logout():
     session.clear()
     return redirect('/')
 
+
+def send_reset_code(email_to, code):
+    try:
+        msg = EmailMessage()
+        msg['From'] = EMAIL_ADDRESS
+        msg['To'] = email_to
+        msg['Subject'] = 'Код для сброса пароля'
+        msg.set_content(f'Ваш код для сброса пароля: {code}\n\nКод действителен 10 минут.')
+
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(EMAIL_ADDRESS, APP_PASSWORD)
+            server.send_message(msg)
+
+        return True
+    except Exception as e:
+        print(f"ОШИБКА: {e}")
+        return False
 
 if __name__ == '__main__':
     app.run(debug=True)

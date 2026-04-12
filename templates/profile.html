@@ -7,8 +7,49 @@
     <link rel="stylesheet" type="text/css" href="/static/css/base.css">
     <link rel="stylesheet" type="text/css" href="/static/css/profile.css">
     <title>Профиль пользователя</title>
+    <style>
+        .top-buttons {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .main-page-btn {
+            background-color: #0d6efd;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .main-page-btn:hover {
+            background-color: #0b5ed7;
+            color: white;
+        }
+        .logout-btn {
+            background-color: #dc3545;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .logout-btn:hover {
+            background-color: #bb2d3b;
+            color: white;
+        }
+    </style>
 </head>
 <body>
+    <div class="top-buttons">
+        <a href="/main/{{ login }}" class="main-page-btn">На главную</a>
+        <a href="/logout" class="logout-btn">Выйти</a>
+    </div>
+
     <div class="profile-page">
         <div class="profile-header">
             <div class="profile-avatar-section">
@@ -29,11 +70,8 @@
 
                 <div class="profile-stats">
                     <h3>Статистика</h3>
-                    <div class="stat-item"><span class="stat-label">Просмотрено фильмов:</span><span class="stat-value">0</span></div>
                     <div class="stat-item"><span class="stat-label">В избранном:</span><span class="stat-value">{{ liked_count_total }}</span></div>
                     <div class="stat-item"><span class="stat-label">Неинтересно:</span><span class="stat-value">{{ not_interested_count_total }}</span></div>
-                    <div class="stat-item"><span class="stat-label">Оценок:</span><span class="stat-value">0</span></div>
-                    <div class="stat-item"><span class="stat-label">Рецензий:</span><span class="stat-value">0</span></div>
                 </div>
             </div>
             <form method="GET" action="" id="filter-form">
@@ -294,11 +332,6 @@
                 <div class="favorites-placeholder">У вас пока нет отмеченных как неинтересные фильмов</div>
                 {% endif %}
             </div>
-        </div>
-
-        <div style="text-align: center; margin-top: 30px;">
-            <a href="/main/{{ login }}" style="color: #0d6efd; text-decoration: none;">Вернуться на главную</a>
-            <a href="/logout" style="color: #dc3545; text-decoration: none; margin-left: 20px;">Выйти</a>
         </div>
     </div>
     <script src="/static/js/profile.js"></script>

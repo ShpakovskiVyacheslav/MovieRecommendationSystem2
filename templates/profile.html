@@ -226,7 +226,7 @@
                                 {% endfor %}
                             </div>
                             {% endif %}
-                            <a href="/remove_favorite/{{ login }}/{{ film.id }}" class="remove-favorite" onclick="return confirm('Удалить фильм из избранного?')">Удалить из избранного</a>
+                            <a href="/remove_favorite/{{ login }}/{{ film.id }}" class="remove-favorite">Удалить из избранного</a>
                         </div>
                     </div>
                     {% endfor %}
@@ -295,7 +295,7 @@
                                 {% endfor %}
                             </div>
                             {% endif %}
-                            <a href="/remove_favorite/{{ login }}/{{ film.id }}" class="remove-favorite" onclick="return confirm('Удалить фильм из неинтересных?')">Удалить из неинтересных</a>
+                            <a href="/remove_favorite/{{ login }}/{{ film.id }}" class="remove-favorite">Удалить из неинтересных</a>
                         </div>
                     </div>
                     {% endfor %}

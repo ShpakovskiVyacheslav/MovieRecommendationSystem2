@@ -3,6 +3,7 @@ import random
 import os
 import math
 import requests
+import re
 import smtplib
 from email.message import EmailMessage
 import time
@@ -275,6 +276,12 @@ def register():
             return render_template('register.html', error=error,
                                    email=email, username=username, login=login)
 
+        # Проверка сложности пароля
+        if not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,16}$', password):
+            error = 'Пароль должен содержать 8-16 символов: строчные и заглавные буквы, цифры и спецсимволы (!@#$%^&*)'
+            return render_template('register.html', error=error,
+                                   email=email, username=username, login=login)
+
         db_sess = create_session()
         try:
             existing_user = db_sess.query(User).filter(
@@ -337,6 +344,10 @@ def reset_confirm():
 
     if new_password != confirm_password:
         return "Пароли не совпадают", 400
+
+    # Проверка сложности нового пароля при сбросе
+    if not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,16}$', new_password):
+        return "Пароль должен содержать 8-16 символов: строчные и заглавные буквы, цифры и спецсимволы (!@#$%^&*)", 400
 
     stored = reset_codes.get(email)
     if not stored or stored['code'] != code:
@@ -559,23 +570,6 @@ def logout():
     session.clear()
     return redirect('/')
 
-
-def send_reset_code(email_to, code):
-    try:
-        msg = EmailMessage()
-        msg['From'] = EMAIL_ADDRESS
-        msg['To'] = email_to
-        msg['Subject'] = 'Код для сброса пароля'
-        msg.set_content(f'Ваш код для сброса пароля: {code}\n\nКод действителен 10 минут.')
-
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-            server.login(EMAIL_ADDRESS, APP_PASSWORD)
-            server.send_message(msg)
-
-        return True
-    except Exception as e:
-        print(f"ОШИБКА: {e}")
-        return False
 
 if __name__ == '__main__':
     app.run(debug=True)

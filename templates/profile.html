@@ -7,47 +7,90 @@
     <link rel="stylesheet" type="text/css" href="/static/css/base.css">
     <link rel="stylesheet" type="text/css" href="/static/css/profile.css">
     <title>Профиль пользователя</title>
-    <style>
-        .top-buttons {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
-            z-index: 1000;
-        }
-        .main-page-btn {
-            background-color: #0d6efd;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: bold;
-        }
-        .main-page-btn:hover {
-            background-color: #0b5ed7;
-            color: white;
-        }
-        .logout-btn {
-            background-color: #dc3545;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: bold;
-        }
-        .logout-btn:hover {
-            background-color: #bb2d3b;
-            color: white;
-        }
-    </style>
 </head>
 <body>
     <div class="top-buttons">
         <a href="/main/{{ login }}" class="main-page-btn">На главную</a>
         <a href="/logout" class="logout-btn">Выйти</a>
+    </div>
+
+    <div id="filterModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeFilterBtn">&times;</span>
+            <form method="GET" action="" id="filter-form">
+                <h3>Фильтры</h3>
+                <div class="filter-group">
+                    <label>Жанры (нажмите чтобы выбрать)</label>
+                    <div class="filter-tags">
+                        <span class="filter-tag" data-genre="1">Ужасы</span>
+                        <span class="filter-tag" data-genre="2">Триллер</span>
+                        <span class="filter-tag" data-genre="3">Документальный</span>
+                        <span class="filter-tag" data-genre="4">Военный</span>
+                        <span class="filter-tag" data-genre="5">История</span>
+                        <span class="filter-tag" data-genre="6">Мультфильм</span>
+                        <span class="filter-tag" data-genre="7">Фантастика</span>
+                        <span class="filter-tag" data-genre="8">Фэнтези</span>
+                        <span class="filter-tag" data-genre="9">Комедия</span>
+                        <span class="filter-tag" data-genre="10">Приключения</span>
+                        <span class="filter-tag" data-genre="11">Семейный</span>
+                        <span class="filter-tag" data-genre="12">Драма</span>
+                        <span class="filter-tag" data-genre="13">Криминал</span>
+                        <span class="filter-tag" data-genre="14">Детектив</span>
+                        <span class="filter-tag" data-genre="15">Короткометражка</span>
+                        <span class="filter-tag" data-genre="16">Боевик</span>
+                        <span class="filter-tag" data-genre="17">Мелодрама</span>
+                        <span class="filter-tag" data-genre="18">Биография</span>
+                        <span class="filter-tag" data-genre="19">Мюзикл</span>
+                        <span class="filter-tag" data-genre="20">Музыка</span>
+                        <span class="filter-tag" data-genre="21">Спорт</span>
+                        <span class="filter-tag" data-genre="22">Детский</span>
+                        <span class="filter-tag" data-genre="23">Вестерн</span>
+                        <span class="filter-tag" data-genre="24">Аниме</span>
+                        <span class="filter-tag" data-genre="25">Фильм-нуар</span>
+                        <span class="filter-tag" data-genre="26">Для взрослых</span>
+                        <span class="filter-tag" data-genre="27">Игра</span>
+                        <span class="filter-tag" data-genre="28">Реальное ТВ</span>
+                        <span class="filter-tag" data-genre="29">Новости</span>
+                        <span class="filter-tag" data-genre="30">Концерт</span>
+                        <span class="filter-tag" data-genre="31">Церемония</span>
+                        <span class="filter-tag" data-genre="32">Ток-шоу</span>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="rating">Рейтинг</label>
+                    <select class="filter-select" id="rating" name="rating">
+                        <option value="any">Любой</option>
+                        <option value="8">Выше 8</option>
+                        <option value="7">Выше 7</option>
+                        <option value="6">Выше 6</option>
+                        <option value="5">Выше 5</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="year">Год</label>
+                    <select class="filter-select" id="year" name="year">
+                        <option value="all">Все годы</option>
+                        <option value="2020-2024">2020-2024</option>
+                        <option value="2010-2019">2010-2019</option>
+                        <option value="2000-2009">2000-2009</option>
+                        <option value="1990-1999">1990-1999</option>
+                        <option value="1980-1989">1980-1989</option>
+                        <option value="1970-1979">1970-1979</option>
+                        <option value="1960-1969">1960-1969</option>
+                        <option value="1950-1959">1950-1959</option>
+                        <option value="1940-1949">1940-1949</option>
+                        <option value="1930-1939">1930-1939</option>
+                        <option value="1920-1929">1920-1929</option>
+                        <option value="1910-1919">1910-1919</option>
+                        <option value="1900-1909">1900-1909</option>
+                    </select>
+                </div>
+                <input type="hidden" name="genres" id="selected-genres" value="">
+                <button type="submit" class="apply-filters-btn">Применить фильтры</button>
+            </form>
+        </div>
     </div>
 
     <div class="profile-page">
@@ -74,125 +117,15 @@
                     <div class="stat-item"><span class="stat-label">Неинтересно:</span><span class="stat-value">{{ not_interested_count_total }}</span></div>
                 </div>
             </div>
-            <form method="GET" action="" id="filter-form">
-                <div class="profile-filters">
-                    <h3>Фильтры</h3>
-                    <div class="filter-group">
-                        <label>Жанры (нажмите чтобы выбрать)</label>
-                        <div class="filter-tags">
-                            <span class="filter-tag" data-genre="1" onclick="toggleGenre(this)">Ужасы</span>
-                            <span class="filter-tag" data-genre="2" onclick="toggleGenre(this)">Триллер</span>
-                            <span class="filter-tag" data-genre="3" onclick="toggleGenre(this)">Документальный</span>
-                            <span class="filter-tag" data-genre="4" onclick="toggleGenre(this)">Военный</span>
-                            <span class="filter-tag" data-genre="5" onclick="toggleGenre(this)">История</span>
-                            <span class="filter-tag" data-genre="6" onclick="toggleGenre(this)">Мультфильм</span>
-                            <span class="filter-tag" data-genre="7" onclick="toggleGenre(this)">Фантастика</span>
-                            <span class="filter-tag" data-genre="8" onclick="toggleGenre(this)">Фэнтези</span>
-                            <span class="filter-tag" data-genre="9" onclick="toggleGenre(this)">Комедия</span>
-                            <span class="filter-tag" data-genre="10" onclick="toggleGenre(this)">Приключения</span>
-                            <span class="filter-tag" data-genre="11" onclick="toggleGenre(this)">Семейный</span>
-                            <span class="filter-tag" data-genre="12" onclick="toggleGenre(this)">Драма</span>
-                            <span class="filter-tag" data-genre="13" onclick="toggleGenre(this)">Криминал</span>
-                            <span class="filter-tag" data-genre="14" onclick="toggleGenre(this)">Детектив</span>
-                            <span class="filter-tag" data-genre="15" onclick="toggleGenre(this)">Короткометражка</span>
-                            <span class="filter-tag" data-genre="16" onclick="toggleGenre(this)">Боевик</span>
-                            <span class="filter-tag" data-genre="17" onclick="toggleGenre(this)">Мелодрама</span>
-                            <span class="filter-tag" data-genre="18" onclick="toggleGenre(this)">Биография</span>
-                            <span class="filter-tag" data-genre="19" onclick="toggleGenre(this)">Мюзикл</span>
-                            <span class="filter-tag" data-genre="20" onclick="toggleGenre(this)">Музыка</span>
-                            <span class="filter-tag" data-genre="21" onclick="toggleGenre(this)">Спорт</span>
-                            <span class="filter-tag" data-genre="22" onclick="toggleGenre(this)">Детский</span>
-                            <span class="filter-tag" data-genre="23" onclick="toggleGenre(this)">Вестерн</span>
-                            <span class="filter-tag" data-genre="24" onclick="toggleGenre(this)">Аниме</span>
-                            <span class="filter-tag" data-genre="25" onclick="toggleGenre(this)">Фильм-нуар</span>
-                            <span class="filter-tag" data-genre="26" onclick="toggleGenre(this)">Для взрослых</span>
-                            <span class="filter-tag" data-genre="27" onclick="toggleGenre(this)">Игра</span>
-                            <span class="filter-tag" data-genre="28" onclick="toggleGenre(this)">Реальное ТВ</span>
-                            <span class="filter-tag" data-genre="29" onclick="toggleGenre(this)">Новости</span>
-                            <span class="filter-tag" data-genre="30" onclick="toggleGenre(this)">Концерт</span>
-                            <span class="filter-tag" data-genre="31" onclick="toggleGenre(this)">Церемония</span>
-                            <span class="filter-tag" data-genre="32" onclick="toggleGenre(this)">Ток-шоу</span>
-                        </div>
-                    </div>
-
-                    <div class="filter-group">
-                        <label for="rating">Рейтинг</label>
-                        <select class="filter-select" id="rating" name="rating">
-                            <option value="any">Любой</option>
-                            <option value="8">Выше 8</option>
-                            <option value="7">Выше 7</option>
-                            <option value="6">Выше 6</option>
-                            <option value="5">Выше 5</option>
-                        </select>
-                    </div>
-
-                    <div class="filter-group">
-                        <label for="year">Год</label>
-                        <select class="filter-select" id="year" name="year">
-                            <option value="all">Все годы</option>
-                            <option value="2020-2024">2020-2024</option>
-                            <option value="2010-2019">2010-2019</option>
-                            <option value="2000-2009">2000-2009</option>
-                            <option value="1990-1999">1990-1999</option>
-                            <option value="1980-1989">1980-1989</option>
-                            <option value="1970-1979">1970-1979</option>
-                            <option value="1960-1969">1960-1969</option>
-                            <option value="1950-1959">1950-1959</option>
-                            <option value="1940-1949">1940-1949</option>
-                            <option value="1930-1939">1930-1939</option>
-                            <option value="1920-1929">1950-1929</option>
-                            <option value="1910-1919">1910-1919</option>
-                            <option value="1900-1909">1900-1909</option>
-                        </select>
-                    </div>
-                    <input type="hidden" name="genres" id="selected-genres" value="">
-                    <button type="submit" class="apply-filters-btn">Применить фильтры</button>
-                </div>
-            </form>
         </div>
 
-        <script>
-
-            const genreTags = document.querySelectorAll('.filter-tag');
-            const hiddenGenres = document.getElementById('selected-genres');
-            let selectedGenres = [];
-
-            genreTags.forEach(tag => {
-                tag.addEventListener('click', function() {
-                    const genre = this.dataset.genre;
-                    const index = selectedGenres.indexOf(genre);
-                    if (index === -1) {
-                        selectedGenres.push(genre);
-                        this.classList.add('active');
-                    } else {
-                        selectedGenres.splice(index, 1);
-                        this.classList.remove('active');
-                    }
-                    hiddenGenres.value = selectedGenres.join(',');
-                });
-            });
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const genresParam = urlParams.get('genres');
-            if (genresParam) {
-                selectedGenres = genresParam.split(',');
-                hiddenGenres.value = genresParam;
-                genreTags.forEach(tag => {
-                    if (selectedGenres.includes(tag.dataset.genre)) {
-                        tag.classList.add('active');
-                    }
-                });
-            }
-            const ratingVal = urlParams.get('rating');
-            if (ratingVal) document.getElementById('rating').value = ratingVal;
-            const yearVal = urlParams.get('year');
-            if (yearVal) document.getElementById('year').value = yearVal;
-        </script>
-
         <div class="favorites-section">
-            <div class="tabs">
-                <button class="tab-btn" onclick="saveTab('favorites', event)">Избранные фильмы ({{ liked_count_total }})</button>
-                <button class="tab-btn" onclick="saveTab('not-interested', event)">Неинтересные фильмы ({{ not_interested_count_total }})</button>
+            <div class="filters-header">
+                <div class="tabs">
+                    <button class="tab-btn" data-tab="favorites">Избранные фильмы ({{ liked_count_total }})</button>
+                    <button class="tab-btn" data-tab="not-interested">Неинтересные фильмы ({{ not_interested_count_total }})</button>
+                </div>
+                <button id="openFilterBtn" class="filter-btn-inline">Фильтры</button>
             </div>
 
             <div id="favorites" class="tab-content">
@@ -235,7 +168,7 @@
                 {% if total_pages_liked > 1 %}
                 <div class="pagination">
                     {% if page_liked > 1 %}
-                    <a href="?page_liked={{ page_liked - 1 }}&page_not_interested={{ page_not_interested }}">Предыдущая</a>
+                    <a href="?page_liked={{ page_liked - 1 }}&page_not_interested={{ page_not_interested }}&rating={{ rating }}&year={{ year }}&genres={{ genres }}">Предыдущая</a>
                     {% else %}
                     <span class="disabled">Предыдущая</span>
                     {% endif %}
@@ -244,12 +177,12 @@
                         {% if p == page_liked %}
                         <span class="active">{{ p }}</span>
                         {% elif p <= 3 or p > total_pages_liked - 3 or (p >= page_liked - 2 and p <= page_liked + 2) %}
-                        <a href="?page_liked={{ p }}&page_not_interested={{ page_not_interested }}">{{ p }}</a>
+                        <a href="?page_liked={{ p }}&page_not_interested={{ page_not_interested }}&rating={{ rating }}&year={{ year }}&genres={{ genres }}">{{ p }}</a>
                         {% endif %}
                     {% endfor %}
 
                     {% if page_liked < total_pages_liked %}
-                    <a href="?page_liked={{ page_liked + 1 }}&page_not_interested={{ page_not_interested }}">Следующая</a>
+                    <a href="?page_liked={{ page_liked + 1 }}&page_not_interested={{ page_not_interested }}&rating={{ rating }}&year={{ year }}&genres={{ genres }}">Следующая</a>
                     {% else %}
                     <span class="disabled">Следующая</span>
                     {% endif %}
@@ -304,7 +237,7 @@
                 {% if total_pages_not_interested > 1 %}
                 <div class="pagination">
                     {% if page_not_interested > 1 %}
-                    <a href="?page_liked={{ page_liked }}&page_not_interested={{ page_not_interested - 1 }}">Предыдущая</a>
+                    <a href="?page_liked={{ page_liked }}&page_not_interested={{ page_not_interested - 1 }}&rating={{ rating }}&year={{ year }}&genres={{ genres }}">Предыдущая</a>
                     {% else %}
                     <span class="disabled">Предыдущая</span>
                     {% endif %}
@@ -313,12 +246,12 @@
                         {% if p == page_not_interested %}
                         <span class="active">{{ p }}</span>
                         {% elif p <= 3 or p > total_pages_not_interested - 3 or (p >= page_not_interested - 2 and p <= page_not_interested + 2) %}
-                        <a href="?page_liked={{ page_liked }}&page_not_interested={{ p }}">{{ p }}</a>
+                        <a href="?page_liked={{ page_liked }}&page_not_interested={{ p }}&rating={{ rating }}&year={{ year }}&genres={{ genres }}">{{ p }}</a>
                         {% endif %}
                     {% endfor %}
 
                     {% if page_not_interested < total_pages_not_interested %}
-                    <a href="?page_liked={{ page_liked }}&page_not_interested={{ page_not_interested + 1 }}">Следующая</a>
+                    <a href="?page_liked={{ page_liked }}&page_not_interested={{ page_not_interested + 1 }}&rating={{ rating }}&year={{ year }}&genres={{ genres }}">Следующая</a>
                     {% else %}
                     <span class="disabled">Следующая</span>
                     {% endif %}
@@ -334,6 +267,7 @@
             </div>
         </div>
     </div>
+
     <script src="/static/js/profile.js"></script>
 </body>
 </html>

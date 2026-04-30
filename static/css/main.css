@@ -196,36 +196,54 @@
 
 .btn-like {
     flex: 1;
-    padding: 10px 12px;
-    border: none;
-    border-radius: 8px;
+    padding: 8px;
+    border: 2px solid #6c757d;
+    border-radius: 5px;
     cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    transition: background-color 0.2s;
-    background-color: #198754;
-    color: white;
+    transition: all 0.3s;
+    font-size: 12px;
+    font-weight: 500;
+    background-color: #f8f9fa;
+    color: #6c757d;
+    text-align: center;
 }
 
 .btn-like:hover {
-    background-color: #0f5e3a;
+    border-color: #28a745;
+    color: #28a745;
+    background-color: rgba(40, 167, 69, 0.1);
+}
+
+.btn-like.active {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
 }
 
 .btn-not-interested {
     flex: 1;
-    padding: 10px 12px;
-    border: none;
-    border-radius: 8px;
+    padding: 8px;
+    border: 2px solid #6c757d;
+    border-radius: 5px;
     cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    transition: background-color 0.2s;
-    background-color: #dc3545;
-    color: white;
+    transition: all 0.3s;
+    font-size: 12px;
+    font-weight: 500;
+    background-color: #f8f9fa;
+    color: #6c757d;
+    text-align: center;
 }
 
 .btn-not-interested:hover {
-    background-color: #b02a37;
+    border-color: #dc3545;
+    color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.btn-not-interested.active {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
 }
 
 .recommended-section {
@@ -238,65 +256,6 @@
     margin-bottom: 20px;
     color: #333;
     font-size: 24px;
-}
-
-.recommended-section .films-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 15px;
-}
-
-.recommended-section .film-card {
-    border-radius: 8px;
-    width: 100%;
-}
-
-.recommended-section .film-poster {
-    height: auto;
-    width: 100%;
-}
-
-.recommended-section .film-info {
-    padding: 8px;
-}
-
-.recommended-section .film-title {
-    font-size: 12px;
-    margin-bottom: 4px;
-}
-
-.recommended-section .film-year,
-.recommended-section .film-rating {
-    font-size: 10px;
-}
-
-.recommended-section .film-genres {
-    margin: 4px 0;
-}
-
-.recommended-section .genre-tag {
-    font-size: 9px;
-    padding: 1px 5px;
-}
-
-.recommended-section .film-actions {
-    margin-top: auto;
-    padding-top: 6px;
-    gap: 4px;
-}
-
-.recommended-section .btn-like,
-.recommended-section .btn-not-interested {
-    padding: 6px 8px;
-    font-size: 9px;
-}
-
-.recommended-section .film-card:hover {
-    transform: translateY(-3px);
-}
-
-.recommended-section .film-card:hover .film-poster {
-    transform: scale(1.02);
 }
 
 .pagination {
@@ -451,23 +410,6 @@
     .films-grid {
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
         gap: 15px;
-    }
-
-    .film-poster {
-        height: 240px;
-    }
-
-    .recommended-section .films-grid {
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-        gap: 10px;
-    }
-
-    .recommended-section .film-poster {
-        height: 195px;
-    }
-
-    .recommended-section .film-title {
-        font-size: 11px;
     }
 
     .search-box {

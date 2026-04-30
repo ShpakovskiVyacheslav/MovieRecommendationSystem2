@@ -100,7 +100,7 @@
                                         <option value="1950-1959">1950-1959</option>
                                         <option value="1940-1949">1940-1949</option>
                                         <option value="1930-1939">1930-1939</option>
-                                        <option value="1920-1929">1950-1929</option>
+                                        <option value="1920-1929">1920-1929</option>
                                         <option value="1910-1919">1910-1919</option>
                                         <option value="1900-1909">1900-1909</option>
                                     </select>
@@ -194,6 +194,44 @@
         </div>
     </div>
 
+    <script>
+        const modal = document.getElementById('myModal');
+        const openBtn = document.getElementById('openModalBtn');
+        const closeBtn = document.querySelector('.close');
+
+        openBtn.onclick = function() { modal.style.display = 'block'; }
+        closeBtn.onclick = function() { modal.style.display = 'none'; }
+        window.onclick = function(event) { if (event.target == modal) modal.style.display = 'none'; }
+
+        function toggleGenre(element) {
+            element.classList.toggle('active');
+            updateSelectedGenres();
+        }
+
+        function updateSelectedGenres() {
+            let selected = [];
+            document.querySelectorAll('.filter-tag.active').forEach(tag => {
+                selected.push(tag.dataset.genre);
+            });
+            document.getElementById('selected-genres').value = selected.join(',');
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const genresParam = urlParams.get('genres');
+        if (genresParam) {
+            const selectedIds = genresParam.split(',');
+            document.querySelectorAll('.filter-tag').forEach(tag => {
+                if (selectedIds.includes(tag.dataset.genre)) {
+                    tag.classList.add('active');
+                }
+            });
+            updateSelectedGenres();
+        }
+        const ratingVal = urlParams.get('rating');
+        if (ratingVal) document.getElementById('rating').value = ratingVal;
+        const yearVal = urlParams.get('year');
+        if (yearVal) document.getElementById('year').value = yearVal;
+    </script>
     <script src="/static/js/main.js"></script>
 </body>
 </html>

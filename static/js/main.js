@@ -1,6 +1,6 @@
 let allRecommendations = [];
 let currentPage = 0;
-let itemsPerPage = 10; // 2 строки по 5 фильмов
+let itemsPerPage = 5;
 
 async function loadRecommendations() {
     const container = document.getElementById('recommendations-container');
@@ -35,35 +35,26 @@ function renderCarousel() {
     const start = currentPage * itemsPerPage;
     const currentFilms = allRecommendations.slice(start, start + itemsPerPage);
 
-    const firstRow = currentFilms.slice(0, 5);
-    const secondRow = currentFilms.slice(5, 10);
-
     let html = `
         <div class="recommendations-carousel">
             <button class="carousel-btn" onclick="prevPage()" ${currentPage === 0 ? 'disabled' : ''}>←</button>
             <div class="carousel-container">
                 <div class="carousel-track">
+                    <div class="carousel-slide">
+                        <div class="recommendations-grid">
     `;
 
-    if (firstRow.length > 0) {
-        html += `<div class="carousel-slide"><div class="recommendations-grid">`;
-        firstRow.forEach(film => { html += renderFilmCard(film); });
-        for (let i = firstRow.length; i < 5; i++) {
-            html += `<div class="film-card-placeholder" style="visibility: hidden;"></div>`;
-        }
-        html += `</div></div>`;
-    }
+    currentFilms.forEach(film => {
+        html += renderFilmCard(film);
+    });
 
-    if (secondRow.length > 0) {
-        html += `<div class="carousel-slide"><div class="recommendations-grid" style="margin-top: 20px;">`;
-        secondRow.forEach(film => { html += renderFilmCard(film); });
-        for (let i = secondRow.length; i < 5; i++) {
-            html += `<div class="film-card-placeholder" style="visibility: hidden;"></div>`;
-        }
-        html += `</div></div>`;
+    for (let i = currentFilms.length; i < 5; i++) {
+        html += `<div class="film-card-placeholder" style="visibility: hidden;"></div>`;
     }
 
     html += `
+                        </div>
+                    </div>
                 </div>
             </div>
             <button class="carousel-btn" onclick="nextPage()" ${currentPage >= totalPages - 1 ? 'disabled' : ''}>→</button>
@@ -130,17 +121,26 @@ async function loadButtonStates() {
         const filmStatusMap = {};
         userFilms.forEach(uf => { filmStatusMap[uf.film_id] = uf.status; });
 
-        document.querySelectorAll('.btn-like, .btn-not-interested').forEach(btn => {
+        document.querySelectorAll('.btn-like').forEach(btn => {
             const filmId = parseInt(btn.dataset.filmId);
-            const isLike = btn.classList.contains('btn-like');
-            const isActive = filmStatusMap[filmId] === (isLike ? 'like' : 'not_interested');
-
-            if (isActive) {
+            if (filmStatusMap[filmId] === 'like') {
                 btn.classList.add('active');
+                btn.textContent = 'В избранном';
             } else {
                 btn.classList.remove('active');
+                btn.textContent = 'Нравится';
             }
-            btn.textContent = isLike ? 'Нравится' : 'Не интересно';
+        });
+
+        document.querySelectorAll('.btn-not-interested').forEach(btn => {
+            const filmId = parseInt(btn.dataset.filmId);
+            if (filmStatusMap[filmId] === 'not_interested') {
+                btn.classList.add('active');
+                btn.textContent = 'Не интересно';
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = 'Не интересно';
+            }
         });
     } catch (error) {
         console.error('Ошибка загрузки состояний:', error);
@@ -170,20 +170,29 @@ async function updateFilmStatus(filmId, action) {
 
 document.addEventListener('click', async (e) => {
     const btn = e.target;
-    if (!btn.classList.contains('btn-like') && !btn.classList.contains('btn-not-interested')) return;
+    if (btn.classList.contains('btn-like')) {
+        const filmId = btn.dataset.filmId;
+        const isActive = btn.classList.contains('active');
 
-    const filmId = btn.dataset.filmId;
-    const isActive = btn.classList.contains('active');
-    const isLike = btn.classList.contains('btn-like');
+        if (isActive) {
+            await updateFilmStatus(filmId, 'delete');
+        } else {
+            await updateFilmStatus(filmId, 'like');
+        }
+    }
 
-    if (isActive) {
-        await updateFilmStatus(filmId, 'delete');
-    } else {
-        await updateFilmStatus(filmId, isLike ? 'like' : 'not_interested');
+    if (btn.classList.contains('btn-not-interested')) {
+        const filmId = btn.dataset.filmId;
+        const isActive = btn.classList.contains('active');
+
+        if (isActive) {
+            await updateFilmStatus(filmId, 'delete');
+        } else {
+            await updateFilmStatus(filmId, 'not_interested');
+        }
     }
 });
 
 document.addEventListener('DOMContentLoaded', () => {
     loadRecommendations();
-    loadButtonStates();
 });

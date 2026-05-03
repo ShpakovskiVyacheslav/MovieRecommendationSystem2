@@ -35,6 +35,7 @@ os.makedirs(uploads_dir, exist_ok=True)
 
 reset_codes = {}
 
+
 def send_reset_code(email_to, code):
     try:
         msg = EmailMessage()
@@ -563,6 +564,32 @@ def get_recommendations():
              'recommendations': []}), 200
     except Exception as e:
         return jsonify({'error': str(e), 'recommendations': []}), 200
+
+
+@app.route('/api/film/<int:film_id>', methods=['GET'])
+def get_film_details(film_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    db_sess = create_session()
+    try:
+        film = db_sess.query(Film).get(film_id)
+        if not film:
+            return jsonify({'error': 'Фильм не найден'}), 404
+
+        genres = [{'id': g.id, 'name': g.name} for g in film.genres]
+
+        return jsonify({
+            'id': film.id,
+            'name': film.name,
+            'poster': film.poster,
+            'description': film.description,
+            'rating': film.rating,
+            'release_year': film.release_year,
+            'genres': genres
+        })
+    finally:
+        db_sess.close()
 
 
 @app.route('/logout')

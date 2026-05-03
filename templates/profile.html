@@ -14,6 +14,13 @@
         <a href="/logout" class="logout-btn">Выйти</a>
     </div>
 
+    <div id="filmModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
     <div id="filterModal" class="modal">
         <div class="modal-content">
             <span class="close" id="closeFilterBtn">&times;</span>
@@ -131,9 +138,9 @@
             <div id="favorites" class="tab-content">
                 <h3>Избранные фильмы</h3>
                 {% if favorite_films %}
-                <div class="favorites-grid">
+                <div class="favorites-grid" id="favoritesGrid">
                     {% for film in favorite_films %}
-                    <div class="film-card">
+                    <div class="film-card" data-film-id="{{ film.id }}">
                         <div class="film-poster-container">
                             {% if film.poster %}
                                 <img src="{{ film.poster }}" alt="{{ film.name }}" class="film-poster" loading="lazy"
@@ -200,9 +207,9 @@
             <div id="not-interested" class="tab-content">
                 <h3>Неинтересные фильмы</h3>
                 {% if not_interested_films %}
-                <div class="favorites-grid">
+                <div class="favorites-grid" id="notInterestedGrid">
                     {% for film in not_interested_films %}
-                    <div class="film-card">
+                    <div class="film-card" data-film-id="{{ film.id }}">
                         <div class="film-poster-container">
                             {% if film.poster %}
                                 <img src="{{ film.poster }}" alt="{{ film.name }}" class="film-poster" loading="lazy"

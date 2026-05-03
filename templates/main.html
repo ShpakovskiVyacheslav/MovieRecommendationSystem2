@@ -23,6 +23,13 @@
         </a>
     </div>
 
+    <div id="filmModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
     <div class="main-container">
         <div class="search-section">
             <h3>Поиск фильмов</h3>
@@ -123,7 +130,7 @@
             <div class="search-stats">
                 Найдено: {{ total_films }} | Страница {{ page }} из {{ total_pages }}
             </div>
-            <div class="films-grid">
+            <div class="films-grid" id="filmsGrid">
                 {% for film in films %}
                 <div class="film-card" data-film-id="{{ film.id }}">
                     <div class="film-poster-container">

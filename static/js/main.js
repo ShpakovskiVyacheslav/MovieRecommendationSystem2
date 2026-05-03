@@ -2,6 +2,77 @@ let allRecommendations = [];
 let currentPage = 0;
 let itemsPerPage = 5;
 
+const filmModal = document.getElementById('filmModal');
+const closeModalBtn = document.querySelector('.close-modal');
+
+if (closeModalBtn) {
+    closeModalBtn.onclick = function() { filmModal.style.display = 'none'; }
+}
+
+window.addEventListener('click', function(event) {
+    if (event.target === filmModal) {
+        filmModal.style.display = 'none';
+    }
+});
+
+async function showFilmDetails(filmId) {
+    try {
+        const response = await fetch(`/api/film/${filmId}`);
+        const film = await response.json();
+
+        const modalContent = document.getElementById('modalContent');
+
+        let genresHtml = '';
+        if (film.genres && film.genres.length > 0) {
+            genresHtml = `<p><strong>Жанры:</strong> ${film.genres.map(g => g.name).join(', ')}</p>`;
+        }
+
+        modalContent.innerHTML = `
+            <div class="film-detail">
+                <div class="film-detail-header">
+                    ${film.poster ?
+                        `<img src="${film.poster}" alt="${film.name}" class="film-detail-poster">` :
+                        '<div class="film-detail-no-poster">Нет постера</div>'
+                    }
+                    <div class="film-detail-info">
+                        <h2>${film.name}</h2>
+                        ${film.release_year ? `<p><strong>Год выпуска:</strong> ${film.release_year}</p>` : ''}
+                        ${film.rating ? `<p><strong>Рейтинг:</strong> ★ ${film.rating.toFixed(1)}</p>` : ''}
+                        ${genresHtml}
+                    </div>
+                </div>
+                <div class="film-detail-description">
+                    <h3>Описание</h3>
+                    <p>${film.description || 'Описание отсутствует'}</p>
+                </div>
+            </div>
+        `;
+
+        filmModal.style.display = 'block';
+    } catch (error) {
+        console.error('Ошибка загрузки описания:', error);
+    }
+}
+
+function handleFilmCardClick(event) {
+    let target = event.target;
+    let filmCard = target.closest('.film-card');
+
+    if (!filmCard) return;
+
+    if (target.classList.contains('btn-like') ||
+        target.classList.contains('btn-not-interested') ||
+        target.closest('.btn-like') ||
+        target.closest('.btn-not-interested')) {
+        return;
+    }
+
+    const filmId = filmCard.dataset.filmId;
+    if (filmId) {
+        showFilmDetails(filmId);
+    }
+}
+
 async function loadRecommendations() {
     const container = document.getElementById('recommendations-container');
     if (!container) return;
@@ -80,7 +151,7 @@ function renderFilmCard(film) {
         <div class="film-card" data-film-id="${film.id}">
             <div class="film-poster-container">
                 ${film.poster ?
-                    `<img src="${film.poster}" alt="${film.name}" class="film-poster" 
+                    `<img src="${film.poster}" alt="${film.name}" class="film-poster"
                         onerror="this.onerror=null; this.src='https://via.placeholder.com/300x450?text=No+Poster'">` :
                     '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#e9ecef;"><span>Нет постера</span></div>'
                 }
@@ -171,6 +242,7 @@ async function updateFilmStatus(filmId, action) {
 document.addEventListener('click', async (e) => {
     const btn = e.target;
     if (btn.classList.contains('btn-like')) {
+        e.stopPropagation();
         const filmId = btn.dataset.filmId;
         const isActive = btn.classList.contains('active');
 
@@ -182,6 +254,7 @@ document.addEventListener('click', async (e) => {
     }
 
     if (btn.classList.contains('btn-not-interested')) {
+        e.stopPropagation();
         const filmId = btn.dataset.filmId;
         const isActive = btn.classList.contains('active');
 
@@ -195,4 +268,65 @@ document.addEventListener('click', async (e) => {
 
 document.addEventListener('DOMContentLoaded', () => {
     loadRecommendations();
+
+    const filmsGrid = document.getElementById('filmsGrid');
+    if (filmsGrid) {
+        filmsGrid.addEventListener('click', handleFilmCardClick);
+    }
+
+    const modal = document.getElementById('myModal');
+    const openBtn = document.getElementById('openModalBtn');
+    const closeBtn = document.querySelector('.close');
+
+    if (openBtn) {
+        openBtn.onclick = function() { modal.style.display = 'block'; }
+    }
+    if (closeBtn) {
+        closeBtn.onclick = function() { modal.style.display = 'none'; }
+    }
+    window.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    function toggleGenre(element) {
+        element.classList.toggle('active');
+        updateSelectedGenres();
+    }
+
+    function updateSelectedGenres() {
+        let selected = [];
+        document.querySelectorAll('.filter-tag.active').forEach(tag => {
+            selected.push(tag.dataset.genre);
+        });
+        const hiddenGenres = document.getElementById('selected-genres');
+        if (hiddenGenres) hiddenGenres.value = selected.join(',');
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const genresParam = urlParams.get('genres');
+    if (genresParam) {
+        const selectedIds = genresParam.split(',');
+        document.querySelectorAll('.filter-tag').forEach(tag => {
+            if (selectedIds.includes(tag.dataset.genre)) {
+                tag.classList.add('active');
+            }
+        });
+        updateSelectedGenres();
+    }
+    const ratingVal = urlParams.get('rating');
+    if (ratingVal) {
+        const ratingSelect = document.getElementById('rating');
+        if (ratingSelect) ratingSelect.value = ratingVal;
+    }
+    const yearVal = urlParams.get('year');
+    if (yearVal) {
+        const yearSelect = document.getElementById('year');
+        if (yearSelect) yearSelect.value = yearVal;
+    }
+
+    document.querySelectorAll('.filter-tag').forEach(tag => {
+        tag.onclick = function() { toggleGenre(this); }
+    });
 });

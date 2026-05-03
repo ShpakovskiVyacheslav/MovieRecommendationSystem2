@@ -7,73 +7,6 @@
     <link rel="stylesheet" type="text/css" href="/static/css/base.css">
     <link rel="stylesheet" type="text/css" href="/static/css/auth.css">
     <title>Регистрация</title>
-    <style>
-        .password-requirements, .email-requirements {
-            margin-top: 10px;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            font-size: 13px;
-        }
-        .requirement {
-            margin: 6px 0;
-            padding: 4px 8px;
-            border-radius: 6px;
-            transition: all 0.2s;
-        }
-        .requirement.valid {
-            color: #198754;
-            background: #d1e7dd;
-        }
-        .requirement.invalid {
-            color: #dc3545;
-            background: #f8d7da;
-        }
-        .password-strength {
-            margin-top: 10px;
-            padding: 8px 12px;
-            border-radius: 8px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        .strength-weak {
-            background: #dc3545;
-            color: white;
-        }
-        .strength-medium {
-            background: #ffc107;
-            color: #333;
-        }
-        .strength-strong {
-            background: #198754;
-            color: white;
-        }
-        .alert {
-            margin-bottom: 20px;
-            padding: 12px;
-            border-radius: 5px;
-        }
-        .alert-error {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
-        .email-hint {
-            font-size: 12px;
-            color: #6c757d;
-            margin-top: 5px;
-        }
-        .form-control.valid-email {
-            border-color: #198754;
-            background-color: #d1e7dd;
-        }
-        .form-control.invalid-email {
-            border-color: #dc3545;
-            background-color: #f8d7da;
-        }
-    </style>
 </head>
 <body>
     <div class="container mt-5">
@@ -90,11 +23,6 @@
                 <label for="email" class="form-label">Почта</label>
                 <input type="email" class="form-control" id="email" name="email"
                        placeholder="example@gmail.com" value="{{ email or '' }}" required>
-                <div class="email-requirements" id="emailRequirements">
-                    <strong>Доступные почтовые сервисы:</strong>
-                    <div id="emailReq" class="requirement invalid">✗ Только @gmail.com, @yandex.ru, @mail.ru</div>
-                </div>
-                <div class="email-hint" id="emailHint"></div>
             </div>
 
             <div class="mb-3">
@@ -113,31 +41,15 @@
                 <label for="password" class="form-label">Пароль</label>
                 <input type="password" class="form-control" id="password" name="password"
                        placeholder="Введите пароль" required>
-
-                <div class="password-requirements">
-                    <strong>Требования к паролю:</strong>
-                    <div id="lengthReq" class="requirement invalid">✗ 8-16 символов</div>
-                    <div id="lowercaseReq" class="requirement invalid">✗ Строчные буквы (a-z)</div>
-                    <div id="uppercaseReq" class="requirement invalid">✗ Заглавные буквы (A-Z)</div>
-                    <div id="digitReq" class="requirement invalid">✗ Цифры (0-9)</div>
-                    <div id="specialReq" class="requirement invalid">✗ Спецсимволы (!@#$%^&*)</div>
-                </div>
-
-                <div id="strengthBox" class="password-strength strength-weak" style="display: none;">
-                    Надежность: <span id="strengthText">Слабый</span>
-                </div>
             </div>
 
             <div class="mb-3">
                 <label for="confirm_password" class="form-label">Повторите пароль</label>
                 <input type="password" class="form-control" id="confirm_password" name="confirm_password"
                        placeholder="Повторите пароль" required>
-                <div id="confirmError" style="color: #dc3545; font-size: 12px; margin-top: 5px; display: none;">
-                    ✗ Пароли не совпадают
-                </div>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100" id="submitBtn" disabled>Зарегистрироваться</button>
+            <button type="submit" class="btn btn-primary w-100">Зарегистрироваться</button>
 
             <div class="switch-link">
                 <a href="/">Уже есть аккаунт? Войти</a>
@@ -145,152 +57,6 @@
         </form>
     </div>
 
-    <script>
-        const emailInput = document.getElementById('email');
-        const emailReq = document.getElementById('emailReq');
-        const emailHint = document.getElementById('emailHint');
-
-        const passwordInput = document.getElementById('password');
-        const confirmInput = document.getElementById('confirm_password');
-        const submitBtn = document.getElementById('submitBtn');
-        const confirmError = document.getElementById('confirmError');
-        const strengthBox = document.getElementById('strengthBox');
-        const strengthText = document.getElementById('strengthText');
-
-        const lengthReq = document.getElementById('lengthReq');
-        const lowercaseReq = document.getElementById('lowercaseReq');
-        const uppercaseReq = document.getElementById('uppercaseReq');
-        const digitReq = document.getElementById('digitReq');
-        const specialReq = document.getElementById('specialReq');
-
-        function checkEmail(email) {
-            const allowedDomains = ['@gmail.com', '@yandex.ru', '@mail.ru'];
-            let isValid = false;
-            let matchedDomain = '';
-
-            for (const domain of allowedDomains) {
-                if (email.toLowerCase().endsWith(domain)) {
-                    isValid = true;
-                    matchedDomain = domain;
-                    break;
-                }
-            }
-
-            if (isValid && email.length > matchedDomain.length) {
-                emailReq.className = 'requirement valid';
-                emailReq.innerHTML = '✓ Почта подтверждена (' + matchedDomain + ')';
-                emailInput.classList.add('valid-email');
-                emailInput.classList.remove('invalid-email');
-                emailHint.innerHTML = '✓ Отлично!';
-                emailHint.style.color = '#198754';
-                return true;
-            } else {
-                emailReq.className = 'requirement invalid';
-                emailReq.innerHTML = '✗ Только @gmail.com, @yandex.ru, @mail.ru';
-                emailInput.classList.add('invalid-email');
-                emailInput.classList.remove('valid-email');
-                emailHint.innerHTML = '✗ Допустимые почты: example@gmail.com, example@yandex.ru, example@mail.ru';
-                emailHint.style.color = '#dc3545';
-                return false;
-            }
-        }
-
-        function checkPasswordStrength(password) {
-            const lengthValid = password.length >= 8 && password.length <= 16;
-            const lowercaseValid = /[a-z]/.test(password);
-            const uppercaseValid = /[A-Z]/.test(password);
-            const digitValid = /[0-9]/.test(password);
-            const specialValid = /[!@#$%^&*]/.test(password);
-
-            lengthReq.className = lengthValid ? 'requirement valid' : 'requirement invalid';
-            lengthReq.innerHTML = lengthValid ? '✓ 8-16 символов' : '✗ 8-16 символов';
-
-            lowercaseReq.className = lowercaseValid ? 'requirement valid' : 'requirement invalid';
-            lowercaseReq.innerHTML = lowercaseValid ? '✓ Строчные буквы (a-z)' : '✗ Строчные буквы (a-z)';
-
-            uppercaseReq.className = uppercaseValid ? 'requirement valid' : 'requirement invalid';
-            uppercaseReq.innerHTML = uppercaseValid ? '✓ Заглавные буквы (A-Z)' : '✗ Заглавные буквы (A-Z)';
-
-            digitReq.className = digitValid ? 'requirement valid' : 'requirement invalid';
-            digitReq.innerHTML = digitValid ? '✓ Цифры (0-9)' : '✗ Цифры (0-9)';
-
-            specialReq.className = specialValid ? 'requirement valid' : 'requirement invalid';
-            specialReq.innerHTML = specialValid ? '✓ Спецсимволы (!@#$%^&*)' : '✗ Спецсимволы (!@#$%^&*)';
-
-            const allValid = lengthValid && lowercaseValid && uppercaseValid && digitValid && specialValid;
-
-            if (password.length > 0) {
-                strengthBox.style.display = 'block';
-
-                let strength = 0;
-                if (lengthValid) strength++;
-                if (lowercaseValid) strength++;
-                if (uppercaseValid) strength++;
-                if (digitValid) strength++;
-                if (specialValid) strength++;
-
-                strengthBox.classList.remove('strength-weak', 'strength-medium', 'strength-strong');
-
-                if (strength <= 2) {
-                    strengthBox.classList.add('strength-weak');
-                    strengthText.innerText = 'Слабый';
-                } else if (strength <= 4) {
-                    strengthBox.classList.add('strength-medium');
-                    strengthText.innerText = 'Средний';
-                } else {
-                    strengthBox.classList.add('strength-strong');
-                    strengthText.innerText = 'Сильный';
-                }
-            } else {
-                strengthBox.style.display = 'none';
-            }
-
-            return allValid;
-        }
-
-        function checkPasswordsMatch() {
-            const password = passwordInput.value;
-            const confirm = confirmInput.value;
-
-            if (confirm.length > 0 && password !== confirm) {
-                confirmError.style.display = 'block';
-                return false;
-            } else {
-                confirmError.style.display = 'none';
-                return true;
-            }
-        }
-
-        function updateSubmitButton() {
-            const emailValid = checkEmail(emailInput.value);
-            const passwordValid = checkPasswordStrength(passwordInput.value);
-            const passwordsMatch = checkPasswordsMatch();
-            const passwordNotEmpty = passwordInput.value.length > 0;
-
-            if (emailValid && passwordValid && passwordsMatch && passwordNotEmpty) {
-                submitBtn.disabled = false;
-            } else {
-                submitBtn.disabled = true;
-            }
-        }
-
-        emailInput.addEventListener('input', function() {
-            checkEmail(this.value);
-            updateSubmitButton();
-        });
-
-        passwordInput.addEventListener('input', function() {
-            checkPasswordStrength(this.value);
-            updateSubmitButton();
-        });
-
-        confirmInput.addEventListener('input', function() {
-            checkPasswordsMatch();
-            updateSubmitButton();
-        });
-
-        // Initial check
-        checkEmail(emailInput.value);
-    </script>
+    <script src="/static/js/register.js"></script>
 </body>
 </html>

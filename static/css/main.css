@@ -1,3 +1,13 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-image: url('/static/uploads/3.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
+
 .header {
     position: fixed;
     top: 20px;
@@ -125,15 +135,6 @@
     transform: translateY(-5px);
     box-shadow: 0 4px 15px rgba(0,0,0,0.15);
 }
-
-.film-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: auto;
-    padding-top: 12px;
-    cursor: default;
-}
-
 
 .film-poster-container {
     position: relative;

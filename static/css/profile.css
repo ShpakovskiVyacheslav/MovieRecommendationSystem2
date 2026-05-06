@@ -1,3 +1,14 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-image: url('/static/uploads/3.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    min-height: 100vh;
+}
+
 .profile-page {
     max-width: 1200px;
     margin: 40px auto;
@@ -8,7 +19,7 @@
     display: grid;
     grid-template-columns: 200px 1fr 300px;
     gap: 30px;
-    background-color: #f8f9fa;
+    background-color: rgba(248, 249, 250, 0.95);
     padding: 30px;
     border-radius: 15px;
     box-shadow: 0 0 20px rgba(0,0,0,0.1);
@@ -312,7 +323,7 @@
 
 .favorites-section {
     margin-top: 30px;
-    background-color: #f8f9fa;
+    background-color: rgba(248, 249, 250, 0.95);
     padding: 30px;
     border-radius: 15px;
     box-shadow: 0 0 20px rgba(0,0,0,0.1);

@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, session, jsonify
+from flask import Flask, request, render_template, redirect, session, jsonify, make_response
 import random
 import os
 import math
@@ -57,10 +57,23 @@ def send_reset_code(email_to, code):
 @app.route('/', methods=['POST', 'GET'])
 def index():
     if request.method == 'GET':
+        remember_token = request.cookies.get('remember_token')
+        if remember_token:
+            db_sess = create_session()
+            try:
+                user = db_sess.query(User).filter(User.remember_token == remember_token).first()
+                if user:
+                    session['user_id'] = user.id
+                    session['username'] = user.username
+                    return redirect(f'/main/{user.username}')
+            finally:
+                db_sess.close()
         return render_template('login.html', error=None)
+
     elif request.method == 'POST':
         login = request.form.get('login')
         password = request.form.get('password')
+        remember_me = request.form.get('remember_me') == 'on'
 
         if not login or not password:
             return render_template('login.html', error='Пожалуйста, заполните все поля')
@@ -72,7 +85,21 @@ def index():
             if user and user.check_password(password):
                 session['user_id'] = user.id
                 session['username'] = user.username
-                return redirect(f'/main/{user.username}')
+
+                response = make_response(redirect(f'/main/{user.username}'))
+
+                if remember_me:
+                    token = str(random.randint(10000000, 99999999)) + str(user.id)
+                    user.remember_token = token
+                    db_sess.commit()
+                    response.set_cookie('remember_token', token, max_age=30 * 24 * 60 * 60)
+                else:
+                    response.set_cookie('remember_token', '', expires=0)
+                    if user.remember_token:
+                        user.remember_token = None
+                        db_sess.commit()
+
+                return response
             else:
                 return render_template('login.html', error='Неверный логин или пароль')
         finally:
@@ -272,6 +299,11 @@ def register():
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
 
+        if password != confirm_password:
+            error = 'Пароли не совпадают'
+            return render_template('register.html', error=error,
+                                   email=email, username=username, login=login)
+
         if len(username) < 3 or len(username) > 20:
             error = 'Имя пользователя должно содержать от 3 до 20 символов'
             return render_template('register.html', error=error,
@@ -282,12 +314,6 @@ def register():
             return render_template('register.html', error=error,
                                    email=email, username=username, login=login)
 
-        if password != confirm_password:
-            error = 'Пароли не совпадают'
-            return render_template('register.html', error=error,
-                                   email=email, username=username, login=login)
-
-        # Проверка сложности пароля
         if not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,16}$', password):
             error = 'Пароль должен содержать 8-16 символов: строчные и заглавные буквы, цифры и спецсимволы (!@#$%^&*)'
             return render_template('register.html', error=error,
@@ -604,8 +630,20 @@ def get_film_details(film_id):
 
 @app.route('/logout')
 def logout():
+    if 'user_id' in session:
+        db_sess = create_session()
+        try:
+            user = db_sess.query(User).filter(User.id == session['user_id']).first()
+            if user:
+                user.remember_token = None
+                db_sess.commit()
+        finally:
+            db_sess.close()
+
     session.clear()
-    return redirect('/')
+    response = make_response(redirect('/'))
+    response.set_cookie('remember_token', '', expires=0)
+    return response
 
 
 if __name__ == '__main__':

@@ -141,3 +141,16 @@ form.login_form {
     border-color: #dc3545;
     background-color: #f8d7da;
 }
+.form-check {
+    margin-bottom: 15px;
+}
+
+.form-check-input {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.form-check-label {
+    cursor: pointer;
+    color: #555;
+}

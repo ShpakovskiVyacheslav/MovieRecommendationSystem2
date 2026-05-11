@@ -13,6 +13,7 @@ class User(SqlAlchemyBase):
     email = sa.Column(sa.String, nullable=False, unique=True)
     hashed_password = sa.Column(sa.String, nullable=False)
     avatar = sa.Column(sa.String, nullable=True)
+    remember_token = sa.Column(sa.String, nullable=True)
 
     film_relations = orm.relationship("UserFilm", backref="user", cascade="all, delete-orphan")
     films = orm.relationship("Film", secondary="user_films", viewonly=True)

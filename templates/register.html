@@ -23,33 +23,57 @@
                 <label for="email" class="form-label">Почта</label>
                 <input type="email" class="form-control" id="email" name="email"
                        placeholder="example@gmail.com" value="{{ email or '' }}" required>
+                <div class="email-requirements">
+                    <strong>Доступные почтовые сервисы:</strong>
+                    <div id="emailReq" class="requirement invalid">✗ Только @gmail.com, @yandex.ru, @mail.ru</div>
+                </div>
             </div>
 
             <div class="mb-3">
                 <label for="username" class="form-label">Имя пользователя</label>
                 <input type="text" class="form-control" id="username" name="username"
-                       placeholder="Введите имя пользователя" value="{{ username or '' }}" required>
+                       placeholder="Введите имя пользователя (3-20 символов)" value="{{ username or '' }}" required>
+                <div class="username-requirements">
+                    <strong>Требования:</strong>
+                    <div id="usernameReq" class="requirement invalid">✗ Имя пользователя (3-20 символов)</div>
+                </div>
             </div>
 
             <div class="mb-3">
                 <label for="login" class="form-label">Логин</label>
                 <input type="text" class="form-control" id="login" name="login"
-                       placeholder="Введите логин" value="{{ login or '' }}" required>
+                       placeholder="Введите логин (3-20 символов)" value="{{ login or '' }}" required>
+                <div class="login-requirements">
+                    <strong>Требования:</strong>
+                    <div id="loginReq" class="requirement invalid">✗ Логин (3-20 символов)</div>
+                </div>
             </div>
 
             <div class="mb-3">
                 <label for="password" class="form-label">Пароль</label>
                 <input type="password" class="form-control" id="password" name="password"
                        placeholder="Введите пароль" required>
+
+                <div class="password-requirements">
+                    <strong>Требования к паролю:</strong>
+                    <div id="lengthReq" class="requirement invalid">✗ 8-16 символов</div>
+                    <div id="lowercaseReq" class="requirement invalid">✗ Строчные буквы (a-z)</div>
+                    <div id="uppercaseReq" class="requirement invalid">✗ Заглавные буквы (A-Z)</div>
+                    <div id="digitReq" class="requirement invalid">✗ Цифры (0-9)</div>
+                    <div id="specialReq" class="requirement invalid">✗ Спецсимволы (!@#$%^&*)</div>
+                </div>
             </div>
 
             <div class="mb-3">
                 <label for="confirm_password" class="form-label">Повторите пароль</label>
                 <input type="password" class="form-control" id="confirm_password" name="confirm_password"
                        placeholder="Повторите пароль" required>
+                <div id="confirmError" style="color: #dc3545; font-size: 12px; margin-top: 5px; display: none;">
+                    ✗ Пароли не совпадают
+                </div>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100">Зарегистрироваться</button>
+            <button type="submit" class="btn btn-primary w-100" id="submitBtn" disabled>Зарегистрироваться</button>
 
             <div class="switch-link">
                 <a href="/">Уже есть аккаунт? Войти</a>

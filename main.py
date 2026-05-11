@@ -272,6 +272,16 @@ def register():
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
 
+        if len(username) < 3 or len(username) > 20:
+            error = 'Имя пользователя должно содержать от 3 до 20 символов'
+            return render_template('register.html', error=error,
+                                   email=email, username=username, login=login)
+
+        if len(login) < 3 or len(login) > 20:
+            error = 'Логин должен содержать от 3 до 20 символов'
+            return render_template('register.html', error=error,
+                                   email=email, username=username, login=login)
+
         if password != confirm_password:
             error = 'Пароли не совпадают'
             return render_template('register.html', error=error,

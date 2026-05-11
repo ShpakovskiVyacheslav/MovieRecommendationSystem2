@@ -54,22 +54,27 @@ async function showFilmDetails(filmId) {
     }
 }
 
-function handleFilmCardClick(event) {
-    let target = event.target;
-    let filmCard = target.closest('.film-card');
+function initRecommendationsClickHandler() {
+    const recommendationsContainer = document.getElementById('recommendations-container');
+    if (recommendationsContainer) {
+        recommendationsContainer.addEventListener('click', function(event) {
+            let target = event.target;
+            let filmCard = target.closest('.film-card');
 
-    if (!filmCard) return;
+            if (!filmCard) return;
 
-    if (target.classList.contains('btn-like') ||
-        target.classList.contains('btn-not-interested') ||
-        target.closest('.btn-like') ||
-        target.closest('.btn-not-interested')) {
-        return;
-    }
+            if (target.classList.contains('btn-like') ||
+                target.classList.contains('btn-not-interested') ||
+                target.closest('.btn-like') ||
+                target.closest('.btn-not-interested')) {
+                return;
+            }
 
-    const filmId = filmCard.dataset.filmId;
-    if (filmId) {
-        showFilmDetails(filmId);
+            const filmId = filmCard.dataset.filmId;
+            if (filmId) {
+                showFilmDetails(filmId);
+            }
+        });
     }
 }
 
@@ -130,13 +135,14 @@ function renderCarousel() {
             </div>
             <button class="carousel-btn" onclick="nextPage()" ${currentPage >= totalPages - 1 ? 'disabled' : ''}>→</button>
         </div>
-        <div style="text-align: center; margin-top: 15px; color: #666; font-size: 14px;">
+        <div style="text-align: center; margin-top: 15px; color: #1a1a2e; font-size: 14px;">
             Страница ${currentPage + 1} из ${totalPages} (всего ${allRecommendations.length} фильмов)
         </div>
     `;
 
     container.innerHTML = html;
     loadButtonStates();
+    initRecommendationsClickHandler();
 }
 
 function renderFilmCard(film) {
@@ -265,6 +271,25 @@ document.addEventListener('click', async (e) => {
         }
     }
 });
+
+function handleFilmCardClick(event) {
+    let target = event.target;
+    let filmCard = target.closest('.film-card');
+
+    if (!filmCard) return;
+
+    if (target.classList.contains('btn-like') ||
+        target.classList.contains('btn-not-interested') ||
+        target.closest('.btn-like') ||
+        target.closest('.btn-not-interested')) {
+        return;
+    }
+
+    const filmId = filmCard.dataset.filmId;
+    if (filmId) {
+        showFilmDetails(filmId);
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     loadRecommendations();

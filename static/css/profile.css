@@ -35,7 +35,7 @@ body {
     height: 150px;
     border-radius: 50%;
     background-color: #e9ecef;
-    border: 3px solid #0d6efd;
+    border: 3px solid #3CB371;
     margin-bottom: 15px;
     cursor: pointer;
     transition: opacity 0.3s;
@@ -47,7 +47,7 @@ body {
 }
 
 .change-avatar-btn {
-    background-color: #0d6efd;
+    background-color: #3CB371;
     color: white;
     border: none;
     padding: 8px 15px;
@@ -58,23 +58,29 @@ body {
 }
 
 .change-avatar-btn:hover {
-    background-color: #0b5ed7;
+    background-color: #2E8B57;
 }
 
 .profile-info-section {
     padding: 20px;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .profile-username {
     font-size: 28px;
     font-weight: bold;
-    color: #333;
+    color: #1a1a2e;
     margin-bottom: 10px;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .profile-email {
-    color: #666;
+    color: #555;
     margin-bottom: 20px;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .profile-stats {
@@ -82,10 +88,11 @@ body {
     padding: 20px;
     border-radius: 10px;
     border: 1px solid #dee2e6;
+    width: 100%;
 }
 
 .profile-stats h3 {
-    color: #333;
+    color: #1a1a2e;
     margin-bottom: 15px;
     font-size: 18px;
 }
@@ -102,11 +109,11 @@ body {
 }
 
 .stat-label {
-    color: #666;
+    color: #555;
 }
 
 .stat-value {
-    color: #0d6efd;
+    color: #3CB371;
     font-weight: bold;
 }
 
@@ -120,7 +127,7 @@ body {
 }
 
 .main-page-btn {
-    background-color: #0d6efd;
+    background-color: #3CB371;
     color: white;
     padding: 8px 16px;
     border-radius: 8px;
@@ -130,12 +137,12 @@ body {
 }
 
 .main-page-btn:hover {
-    background-color: #0b5ed7;
+    background-color: #2E8B57;
     color: white;
 }
 
 .logout-btn {
-    background-color: #dc3545;
+    background-color: #ff6b6b;
     color: white;
     padding: 8px 16px;
     border-radius: 8px;
@@ -145,7 +152,7 @@ body {
 }
 
 .logout-btn:hover {
-    background-color: #bb2d3b;
+    background-color: #e55a5a;
     color: white;
 }
 
@@ -283,7 +290,7 @@ body {
 }
 
 .filter-tag.active {
-    background: #0d6efd;
+    background: #3CB371;
     color: white;
 }
 
@@ -308,7 +315,7 @@ body {
 .apply-filters-btn {
     width: 100%;
     padding: 12px;
-    background-color: #0d6efd;
+    background-color: #3CB371;
     color: white;
     border: none;
     border-radius: 8px;
@@ -318,7 +325,7 @@ body {
 }
 
 .apply-filters-btn:hover {
-    background-color: #0b5ed7;
+    background-color: #2E8B57;
 }
 
 .favorites-section {
@@ -330,7 +337,7 @@ body {
 }
 
 .favorites-section h3 {
-    color: #333;
+    color: #1a1a2e;
     margin-bottom: 20px;
     font-size: 22px;
 }
@@ -392,20 +399,20 @@ body {
     font-size: 16px;
     font-weight: bold;
     margin-bottom: 8px;
-    color: #333;
+    color: #1a1a2e;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .film-year {
-    color: #666;
+    color: #555;
     font-size: 13px;
     margin-bottom: 5px;
 }
 
 .film-rating {
-    color: #ffc107;
+    color: #ffaa00;
     font-weight: bold;
     margin-bottom: 10px;
     font-size: 14px;
@@ -417,11 +424,11 @@ body {
 
 .genre-tag {
     display: inline-block;
-    background-color: #e9ecef;
+    background-color: rgba(0, 0, 0, 0.05);
     padding: 3px 8px;
     border-radius: 12px;
     font-size: 10px;
-    color: #495057;
+    color: #444;
     margin-right: 5px;
     margin-bottom: 5px;
 }
@@ -438,7 +445,7 @@ body {
     width: 100%;
     margin-top: auto;
     padding: 10px 12px;
-    background-color: #dc3545;
+    background-color: #ff6b6b;
     color: white;
     border: none;
     border-radius: 8px;
@@ -451,7 +458,7 @@ body {
 }
 
 .remove-favorite:hover {
-    background-color: #b02a37;
+    background-color: #e55a5a;
     color: white;
     text-decoration: none;
 }
@@ -464,7 +471,7 @@ body {
 }
 
 .filter-btn-inline {
-    background-color: #0d6efd;
+    background-color: #3CB371;
     color: white;
     padding: 8px 20px;
     border-radius: 8px;
@@ -476,7 +483,7 @@ body {
 }
 
 .filter-btn-inline:hover {
-    background-color: #0b5ed7;
+    background-color: #2E8B57;
 }
 
 .tabs {
@@ -496,8 +503,8 @@ body {
 }
 
 .tab-btn.active {
-    color: #0d6efd;
-    border-bottom: 2px solid #0d6efd;
+    color: #3CB371;
+    border-bottom: 2px solid #3CB371;
 }
 
 .tab-content {
@@ -519,23 +526,23 @@ body {
 .pagination a,
 .pagination span {
     padding: 8px 12px;
-    border: 1px solid #ddd;
+    border: 1px solid rgba(0, 0, 0, 0.2);
     border-radius: 6px;
     text-decoration: none;
-    color: #0d6efd;
+    color: #3CB371;
     transition: all 0.2s;
 }
 
 .pagination a:hover {
-    background-color: #0d6efd;
+    background-color: #3CB371;
     color: white;
-    border-color: #0d6efd;
+    border-color: #3CB371;
 }
 
 .pagination span.active {
-    background-color: #0d6efd;
+    background-color: #3CB371;
     color: white;
-    border-color: #0d6efd;
+    border-color: #3CB371;
 }
 
 .pagination span.disabled {
@@ -545,7 +552,7 @@ body {
 
 .pagination-info {
     text-align: center;
-    color: #666;
+    color: rgba(0, 0, 0, 0.7);
     font-size: 14px;
 }
 

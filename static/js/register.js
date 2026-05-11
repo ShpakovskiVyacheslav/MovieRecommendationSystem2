@@ -1,4 +1,6 @@
 const emailInput = document.getElementById('email');
+const usernameInput = document.getElementById('username');
+const loginInput = document.getElementById('login');
 const passwordInput = document.getElementById('password');
 const confirmInput = document.getElementById('confirm_password');
 const submitBtn = document.getElementById('submitBtn');
@@ -18,33 +20,52 @@ function checkEmail(email) {
     }
 
     const emailReq = document.getElementById('emailReq');
-    const emailHint = document.getElementById('emailHint');
 
     if (isValid && email.length > matchedDomain.length) {
-        if (emailReq) {
-            emailReq.className = 'requirement valid';
-            emailReq.innerHTML = '✓ Почта подтверждена (' + matchedDomain + ')';
-        }
-        emailInput.classList.add('valid-email');
-        emailInput.classList.remove('invalid-email');
-        if (emailHint) {
-            emailHint.innerHTML = '✓ Отлично!';
-            emailHint.style.color = '#198754';
-        }
+        emailReq.className = 'requirement valid';
+        emailReq.innerHTML = '✓ Почта подтверждена (' + matchedDomain + ')';
         return true;
     } else {
-        if (emailReq) {
-            emailReq.className = 'requirement invalid';
-            emailReq.innerHTML = '✗ Только @gmail.com, @yandex.ru, @mail.ru';
-        }
-        emailInput.classList.add('invalid-email');
-        emailInput.classList.remove('valid-email');
-        if (emailHint) {
-            emailHint.innerHTML = '✗ Допустимые почты: example@gmail.com, example@yandex.ru, example@mail.ru';
-            emailHint.style.color = '#dc3545';
-        }
+        emailReq.className = 'requirement invalid';
+        emailReq.innerHTML = '✗ Только @gmail.com, @yandex.ru, @mail.ru';
         return false;
     }
+}
+
+function checkUsername(username) {
+    const usernameReq = document.getElementById('usernameReq');
+    const isValid = username.length >= 3 && username.length <= 20;
+
+    if (username.length === 0) {
+        usernameReq.className = 'requirement invalid';
+        usernameReq.innerHTML = '✗ Имя пользователя (3-20 символов)';
+    } else if (isValid) {
+        usernameReq.className = 'requirement valid';
+        usernameReq.innerHTML = '✓ Имя пользователя (3-20 символов)';
+    } else {
+        usernameReq.className = 'requirement invalid';
+        usernameReq.innerHTML = '✗ Имя пользователя должно быть от 3 до 20 символов';
+    }
+
+    return isValid;
+}
+
+function checkLogin(login) {
+    const loginReq = document.getElementById('loginReq');
+    const isValid = login.length >= 3 && login.length <= 20;
+
+    if (login.length === 0) {
+        loginReq.className = 'requirement invalid';
+        loginReq.innerHTML = '✗ Логин (3-20 символов)';
+    } else if (isValid) {
+        loginReq.className = 'requirement valid';
+        loginReq.innerHTML = '✓ Логин (3-20 символов)';
+    } else {
+        loginReq.className = 'requirement invalid';
+        loginReq.innerHTML = '✗ Логин должен быть от 3 до 20 символов';
+    }
+
+    return isValid;
 }
 
 function checkPasswordStrength(password) {
@@ -59,58 +80,23 @@ function checkPasswordStrength(password) {
     const uppercaseReq = document.getElementById('uppercaseReq');
     const digitReq = document.getElementById('digitReq');
     const specialReq = document.getElementById('specialReq');
-    const strengthBox = document.getElementById('strengthBox');
-    const strengthText = document.getElementById('strengthText');
 
-    if (lengthReq) {
-        lengthReq.className = lengthValid ? 'requirement valid' : 'requirement invalid';
-        lengthReq.innerHTML = lengthValid ? '✓ 8-16 символов' : '✗ 8-16 символов';
-    }
-    if (lowercaseReq) {
-        lowercaseReq.className = lowercaseValid ? 'requirement valid' : 'requirement invalid';
-        lowercaseReq.innerHTML = lowercaseValid ? '✓ Строчные буквы (a-z)' : '✗ Строчные буквы (a-z)';
-    }
-    if (uppercaseReq) {
-        uppercaseReq.className = uppercaseValid ? 'requirement valid' : 'requirement invalid';
-        uppercaseReq.innerHTML = uppercaseValid ? '✓ Заглавные буквы (A-Z)' : '✗ Заглавные буквы (A-Z)';
-    }
-    if (digitReq) {
-        digitReq.className = digitValid ? 'requirement valid' : 'requirement invalid';
-        digitReq.innerHTML = digitValid ? '✓ Цифры (0-9)' : '✗ Цифры (0-9)';
-    }
-    if (specialReq) {
-        specialReq.className = specialValid ? 'requirement valid' : 'requirement invalid';
-        specialReq.innerHTML = specialValid ? '✓ Спецсимволы (!@#$%^&*)' : '✗ Спецсимволы (!@#$%^&*)';
-    }
+    lengthReq.className = lengthValid ? 'requirement valid' : 'requirement invalid';
+    lengthReq.innerHTML = lengthValid ? '✓ 8-16 символов' : '✗ 8-16 символов';
+
+    lowercaseReq.className = lowercaseValid ? 'requirement valid' : 'requirement invalid';
+    lowercaseReq.innerHTML = lowercaseValid ? '✓ Строчные буквы (a-z)' : '✗ Строчные буквы (a-z)';
+
+    uppercaseReq.className = uppercaseValid ? 'requirement valid' : 'requirement invalid';
+    uppercaseReq.innerHTML = uppercaseValid ? '✓ Заглавные буквы (A-Z)' : '✗ Заглавные буквы (A-Z)';
+
+    digitReq.className = digitValid ? 'requirement valid' : 'requirement invalid';
+    digitReq.innerHTML = digitValid ? '✓ Цифры (0-9)' : '✗ Цифры (0-9)';
+
+    specialReq.className = specialValid ? 'requirement valid' : 'requirement invalid';
+    specialReq.innerHTML = specialValid ? '✓ Спецсимволы (!@#$%^&*)' : '✗ Спецсимволы (!@#$%^&*)';
 
     const allValid = lengthValid && lowercaseValid && uppercaseValid && digitValid && specialValid;
-
-    if (password.length > 0 && strengthBox) {
-        strengthBox.style.display = 'block';
-
-        let strength = 0;
-        if (lengthValid) strength++;
-        if (lowercaseValid) strength++;
-        if (uppercaseValid) strength++;
-        if (digitValid) strength++;
-        if (specialValid) strength++;
-
-        strengthBox.classList.remove('strength-weak', 'strength-medium', 'strength-strong');
-
-        if (strength <= 2) {
-            strengthBox.classList.add('strength-weak');
-            if (strengthText) strengthText.innerText = 'Слабый';
-        } else if (strength <= 4) {
-            strengthBox.classList.add('strength-medium');
-            if (strengthText) strengthText.innerText = 'Средний';
-        } else {
-            strengthBox.classList.add('strength-strong');
-            if (strengthText) strengthText.innerText = 'Сильный';
-        }
-    } else if (strengthBox) {
-        strengthBox.style.display = 'none';
-    }
-
     return allValid;
 }
 
@@ -119,31 +105,35 @@ function checkPasswordsMatch() {
     const confirm = confirmInput.value;
 
     if (confirm.length > 0 && password !== confirm) {
-        if (confirmError) confirmError.style.display = 'block';
+        confirmError.style.display = 'block';
         return false;
     } else {
-        if (confirmError) confirmError.style.display = 'none';
+        confirmError.style.display = 'none';
         return true;
     }
 }
 
 function updateSubmitButton() {
     const emailValid = checkEmail(emailInput.value);
+    const usernameValid = checkUsername(usernameInput ? usernameInput.value : '');
+    const loginValid = checkLogin(loginInput ? loginInput.value : '');
     const passwordValid = checkPasswordStrength(passwordInput.value);
     const passwordsMatch = checkPasswordsMatch();
     const passwordNotEmpty = passwordInput.value.length > 0;
 
-    if (submitBtn) {
-        if (emailValid && passwordValid && passwordsMatch && passwordNotEmpty) {
-            submitBtn.disabled = false;
-        } else {
-            submitBtn.disabled = true;
-        }
+    if (emailValid && usernameValid && loginValid && passwordValid && passwordsMatch && passwordNotEmpty) {
+        submitBtn.disabled = false;
+    } else {
+        submitBtn.disabled = true;
     }
 }
 
-if (emailInput) emailInput.addEventListener('input', function() { updateSubmitButton(); });
-if (passwordInput) passwordInput.addEventListener('input', function() { updateSubmitButton(); });
-if (confirmInput) confirmInput.addEventListener('input', function() { updateSubmitButton(); });
+emailInput.addEventListener('input', function() { updateSubmitButton(); });
+usernameInput.addEventListener('input', function() { updateSubmitButton(); });
+loginInput.addEventListener('input', function() { updateSubmitButton(); });
+passwordInput.addEventListener('input', function() { updateSubmitButton(); });
+confirmInput.addEventListener('input', function() { updateSubmitButton(); });
 
-if (emailInput) checkEmail(emailInput.value);
+checkEmail(emailInput.value);
+checkUsername(usernameInput.value);
+checkLogin(loginInput.value);

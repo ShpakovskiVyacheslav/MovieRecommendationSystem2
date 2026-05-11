@@ -54,7 +54,7 @@ def get_recomindations(base_films):
         movie_vectors
     )[0]
     # сортируем по похожести
-    top_n = 1000 # тут чуть криво работает, на выходе не 1000, а примерно 500 (top_n / 2)
+    top_n = 1000
     top_indices = np.argsort(similarities)[-top_n:]
     top_indices = top_indices[np.argsort(similarities[top_indices])[::-1]]
 

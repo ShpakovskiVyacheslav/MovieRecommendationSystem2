@@ -1,22 +1,28 @@
+// Получаем DOM-элементы модального окна фильтров и кнопки открытия/закрытия
 const modal = document.getElementById('filterModal');
 const openBtn = document.getElementById('openFilterBtn');
 const closeBtn = document.getElementById('closeFilterBtn');
 
+// Получаем DOM-элементы модального окна описания фильма
 const filmModal = document.getElementById('filmModal');
 const closeModalBtn = document.querySelector('.close-modal');
 
+// При клике на кнопку "Фильтры" показываем модальное окно (меняем display с none на block)
 if (openBtn) {
     openBtn.onclick = function() { modal.style.display = 'block'; }
 }
 
+// При клике на крестик в окне фильтров скрываем его
 if (closeBtn) {
     closeBtn.onclick = function() { modal.style.display = 'none'; }
 }
 
+// При клике на крестик в окне описания фильма скрываем его
 if (closeModalBtn) {
     closeModalBtn.onclick = function() { filmModal.style.display = 'none'; }
 }
 
+// Обработчик кликов по всему окну браузера.
 window.addEventListener('click', function(event) {
     if (event.target === modal) {
         modal.style.display = 'none';
@@ -26,12 +32,16 @@ window.addEventListener('click', function(event) {
     }
 });
 
+// Обработчик кликов по карточкам фильмов в профиле.
+
 function handleFilmCardClick(event) {
     let target = event.target;
     let filmCard = target.closest('.film-card');
 
     if (!filmCard) return;
 
+    // Если кликнули по кнопке удаления (.remove-favorite) или внутри неё,
+    // то не открываем описание фильма, чтобы кнопка работала нормально
     if (target.classList.contains('remove-favorite') ||
         target.closest('.remove-favorite')) {
         return;
@@ -43,11 +53,13 @@ function handleFilmCardClick(event) {
     }
 }
 
+// Переключает активное состояние тега жанра: добавляет или удаляет класс 'active'
 function toggleGenre(element) {
-    element.classList.toggle('active');
+    element.classList.toggle('active'); // Eсли класса нет, добавляет, если есть — удаляет
     updateSelectedGenres();
 }
 
+// Собирает все выбранные жанры и сохраняет их ID
 function updateSelectedGenres() {
     let selected = [];
     document.querySelectorAll('.filter-tag.active').forEach(tag => {
@@ -57,7 +69,10 @@ function updateSelectedGenres() {
     if (hiddenGenres) hiddenGenres.value = selected.join(',');
 }
 
+// Парсим URL и восстанавливаем значения фильтров после перезагрузки страницы
 const urlParams = new URLSearchParams(window.location.search);
+
+// Восстанавливаем выбранные жанры
 const genresParam = urlParams.get('genres');
 if (genresParam) {
     const selectedIds = genresParam.split(',');
@@ -66,46 +81,56 @@ if (genresParam) {
             tag.classList.add('active');
         }
     });
-    updateSelectedGenres();
+    updateSelectedGenres();  // Обновляем скрытое поле
 }
 
+// Восстанавливаем выбранное значение рейтинга
 const ratingVal = urlParams.get('rating');
 if (ratingVal) {
     const ratingSelect = document.getElementById('rating');
     if (ratingSelect) ratingSelect.value = ratingVal;
 }
 
+// Восстанавливаем выбранный диапазон годов
 const yearVal = urlParams.get('year');
 if (yearVal) {
     const yearSelect = document.getElementById('year');
     if (yearSelect) yearSelect.value = yearVal;
 }
 
+// Назначаем обработчик клика для каждого тега жанра
 document.querySelectorAll('.filter-tag').forEach(tag => {
     tag.onclick = function() { toggleGenre(this); }
 });
 
+// Переключает видимую вкладку (Избранные / Неинтересные)
 function switchTab(tabName, event) {
+    // Скрываем все вкладки (удаляем класс active у всех .tab-content)
     let tabs = document.querySelectorAll('.tab-content');
     for (let i = 0; i < tabs.length; i++) {
         tabs[i].classList.remove('active');
     }
+    // Убираем активное состояние со всех кнопок вкладок
     let btns = document.querySelectorAll('.tab-btn');
     for (let i = 0; i < btns.length; i++) {
         btns[i].classList.remove('active');
     }
 
+    // Показываем выбранную вкладку
     document.getElementById(tabName).classList.add('active');
+    // Подсвечиваем кнопку, по которой кликнули
     if (event && event.target) {
         event.target.classList.add('active');
     }
 }
 
+// Сохраняет активную вкладку в localStorage и переключает её
 function saveTab(tabName, event) {
     localStorage.setItem('activeTab', tabName);
     switchTab(tabName, event);
 }
 
+// Асинхронная функция для получения и отображения подробной информации о фильме
 async function showFilmDetails(filmId) {
     try {
         const response = await fetch(`/api/film/${filmId}`);
@@ -139,16 +164,20 @@ async function showFilmDetails(filmId) {
             </div>
         `;
 
+        // Показываем модальное окно
         filmModal.style.display = 'block';
     } catch (error) {
         console.error('Ошибка загрузки описания:', error);
     }
 }
 
+// DOMContentLoaded срабатывает когда HTML полностью загружен и распарсен
 document.addEventListener('DOMContentLoaded', function() {
+    // Находим контейнеры с карточками фильмов
     const favoritesGrid = document.getElementById('favoritesGrid');
     const notInterestedGrid = document.getElementById('notInterestedGrid');
 
+    // Вешаем обработчик кликов на каждый контейнер (делегирование)
     if (favoritesGrid) {
         favoritesGrid.addEventListener('click', handleFilmCardClick);
     }
@@ -156,8 +185,11 @@ document.addEventListener('DOMContentLoaded', function() {
         notInterestedGrid.addEventListener('click', handleFilmCardClick);
     }
 
+    // Восстанавливаем активную вкладку из localStorage, если нет — по умолчанию 'favorites'
     let savedTab = localStorage.getItem('activeTab') || 'favorites';
     switchTab(savedTab);
+
+    // Подсвечиваем соответствующую кнопку вкладки
     let btns = document.querySelectorAll('.tab-btn');
     for (let i = 0; i < btns.length; i++) {
         if (btns[i].getAttribute('data-tab') === savedTab) {
@@ -165,6 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Назначаем обработчики кликов для кнопок вкладок
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.onclick = function(e) {
             const tabName = this.getAttribute('data-tab');

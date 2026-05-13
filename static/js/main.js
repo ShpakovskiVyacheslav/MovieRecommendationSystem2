@@ -2,29 +2,37 @@ let allRecommendations = [];
 let currentPage = 0;
 let itemsPerPage = 5;
 
+// Получаем DOM-элементы окна и кнопки закрытия
 const filmModal = document.getElementById('filmModal');
 const closeModalBtn = document.querySelector('.close-modal');
 
+// При клике на крестик скрываем окно
 if (closeModalBtn) {
     closeModalBtn.onclick = function() { filmModal.style.display = 'none'; }
 }
 
+// Обработчик клика на всё окно браузера. Если кликнули именно по фону (элементу .modal),
+// а не по содержимому .modal-content, то закрываем окно. Это позволяет закрыть окно
+// при клике на тёмную область вокруг белого прямоугольника.
 window.addEventListener('click', function(event) {
     if (event.target === filmModal) {
         filmModal.style.display = 'none';
     }
 });
 
+// Асинхронная функция, потому что мы ждём ответ от сервера (fetch)
 async function showFilmDetails(filmId) {
     try {
+        // Отправляем GET-запрос к API.
         const response = await fetch(`/api/film/${filmId}`);
+        // Преобразуем ответ из JSON в JavaScript объект
         const film = await response.json();
 
         const modalContent = document.getElementById('modalContent');
 
         let genresHtml = '';
         if (film.genres && film.genres.length > 0) {
-            genresHtml = `<p><strong>Жанры:</strong> ${film.genres.map(g => g.name).join(', ')}</p>`;
+            genresHtml = `<p><strong>Жанры:</strong> ${film.genres.map(g => g.name).join(', ')}</p>`;  // Метод map() создаёт новый массив, применяя функцию к каждому элементу.
         }
 
         modalContent.innerHTML = `
@@ -48,21 +56,25 @@ async function showFilmDetails(filmId) {
             </div>
         `;
 
+        // Показываем модальное окно (меняем display с none на block)
         filmModal.style.display = 'block';
     } catch (error) {
         console.error('Ошибка загрузки описания:', error);
     }
 }
 
+// Функция добавляет обработчик кликов на контейнер с рекомендациями.
 function initRecommendationsClickHandler() {
     const recommendationsContainer = document.getElementById('recommendations-container');
     if (recommendationsContainer) {
         recommendationsContainer.addEventListener('click', function(event) {
             let target = event.target;
+            // closest() поднимается вверх по DOM дереву, пока не найдёт элемент с классом .film-card
             let filmCard = target.closest('.film-card');
 
             if (!filmCard) return;
 
+            // Если кликнули по кнопке или внутри кнопки то не открываем описание, чтобы кнопки работали нормально
             if (target.classList.contains('btn-like') ||
                 target.classList.contains('btn-not-interested') ||
                 target.closest('.btn-like') ||
@@ -78,6 +90,7 @@ function initRecommendationsClickHandler() {
     }
 }
 
+// Загружает рекомендации с сервера
 async function loadRecommendations() {
     const container = document.getElementById('recommendations-container');
     if (!container) return;
@@ -103,6 +116,7 @@ async function loadRecommendations() {
     }
 }
 
+// Отрисовывает карусель рекомендаций на текущей странице
 function renderCarousel() {
     const container = document.getElementById('recommendations-container');
     if (!container) return;
@@ -124,6 +138,7 @@ function renderCarousel() {
         html += renderFilmCard(film);
     });
 
+    // Добавляем пустые невидимые карточки, чтобы сетка не сжималась, если фильмов меньше 5
     for (let i = currentFilms.length; i < 5; i++) {
         html += `<div class="film-card-placeholder" style="visibility: hidden;"></div>`;
     }
@@ -141,13 +156,17 @@ function renderCarousel() {
     `;
 
     container.innerHTML = html;
+    // Обновляем состояния кнопок "Нравится"/"Не интересно"
     loadButtonStates();
+    // Заново вешаем обработчик на новые карточки фильмов
     initRecommendationsClickHandler();
 }
 
+// Генерирует HTML одной карточки фильма для карусели
 function renderFilmCard(film) {
     let genresHtml = '';
     if (film.genres && film.genres.length > 0) {
+        // map() преобразует массив жанров в массив HTML строк, join() склеивает их
         genresHtml = `<div class="film-genres">` + film.genres.map(genre =>
             `<span class="genre-tag">${genre.name}</span>`
         ).join('') + `</div>`;
@@ -176,13 +195,15 @@ function renderFilmCard(film) {
     `;
 }
 
+// Переключение на предыдущую страницу карусели
 function prevPage() {
     if (currentPage > 0) {
         currentPage--;
-        renderCarousel();
+        renderCarousel(); // Перерисовываем с новым currentPage
     }
 }
 
+// Переключение на следующую страницу карусели
 function nextPage() {
     const totalPages = Math.ceil(allRecommendations.length / itemsPerPage);
     if (currentPage < totalPages - 1) {
@@ -191,17 +212,21 @@ function nextPage() {
     }
 }
 
+// Загружает с сервера все фильмы, которые пользователь уже оценил (лайк/не интересно)
+// и обновляет внешний вид кнопок на странице (зелёная/красная подсветка)
 async function loadButtonStates() {
     try {
         const response = await fetch('/api/user_films');
         const userFilms = await response.json();
         const filmStatusMap = {};
+        // Создаём объект, где ключ = film_id, значение = status ('like' или 'not_interested')
         userFilms.forEach(uf => { filmStatusMap[uf.film_id] = uf.status; });
 
+        // Проходим по всем кнопкам "Нравится"
         document.querySelectorAll('.btn-like').forEach(btn => {
             const filmId = parseInt(btn.dataset.filmId);
             if (filmStatusMap[filmId] === 'like') {
-                btn.classList.add('active');
+                btn.classList.add('active');      // Добавляем класс для зелёного цвета
                 btn.textContent = 'В избранном';
             } else {
                 btn.classList.remove('active');
@@ -209,10 +234,11 @@ async function loadButtonStates() {
             }
         });
 
+        // Проходим по всем кнопкам "Не интересно"
         document.querySelectorAll('.btn-not-interested').forEach(btn => {
             const filmId = parseInt(btn.dataset.filmId);
             if (filmStatusMap[filmId] === 'not_interested') {
-                btn.classList.add('active');
+                btn.classList.add('active');      // Добавляем класс для красного цвета
                 btn.textContent = 'Не интересно';
             } else {
                 btn.classList.remove('active');
@@ -224,6 +250,7 @@ async function loadButtonStates() {
     }
 }
 
+// Отправляет запрос на сервер для изменения статуса фильма
 async function updateFilmStatus(filmId, action) {
     try {
         let response;
@@ -238,16 +265,18 @@ async function updateFilmStatus(filmId, action) {
         }
 
         if (response.ok) {
-            await loadButtonStates();
+            await loadButtonStates(); // После успешного изменения обновляем состояние всех кнопок
         }
     } catch (error) {
         console.error('Ошибка:', error);
     }
 }
 
+// Глобальный обработчик кликов. Использует делегирование: ловит клики по всему документу.
 document.addEventListener('click', async (e) => {
     const btn = e.target;
     if (btn.classList.contains('btn-like')) {
+        // Предотвращает всплытие события
         e.stopPropagation();
         const filmId = btn.dataset.filmId;
         const isActive = btn.classList.contains('active');
@@ -272,12 +301,14 @@ document.addEventListener('click', async (e) => {
     }
 });
 
+// Обработчик кликов по сетке фильмов (для открытия описания при клике на карточку)
 function handleFilmCardClick(event) {
     let target = event.target;
     let filmCard = target.closest('.film-card');
 
     if (!filmCard) return;
 
+    // Не открываем описание, если кликнули по кнопке или внутри кнопки
     if (target.classList.contains('btn-like') ||
         target.classList.contains('btn-not-interested') ||
         target.closest('.btn-like') ||
@@ -291,6 +322,7 @@ function handleFilmCardClick(event) {
     }
 }
 
+// DOMContentLoaded срабатывает когда HTML полностью загружен и распарсен
 document.addEventListener('DOMContentLoaded', () => {
     loadRecommendations();
 
@@ -299,6 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
         filmsGrid.addEventListener('click', handleFilmCardClick);
     }
 
+    // Модальное окно с информацией о фильме с описанием
     const modal = document.getElementById('myModal');
     const openBtn = document.getElementById('openModalBtn');
     const closeBtn = document.querySelector('.close');
@@ -315,11 +348,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Переключает класс 'active' у тега жанра
     function toggleGenre(element) {
         element.classList.toggle('active');
         updateSelectedGenres();
     }
 
+    // Собирает все выбранные жанры (с классом active) и сохраняет их ID в скрытое поле
     function updateSelectedGenres() {
         let selected = [];
         document.querySelectorAll('.filter-tag.active').forEach(tag => {
@@ -329,6 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (hiddenGenres) hiddenGenres.value = selected.join(',');
     }
 
+    // Восстанавливаем значения фильтров из URL при загрузке страницы
     const urlParams = new URLSearchParams(window.location.search);
     const genresParam = urlParams.get('genres');
     if (genresParam) {
@@ -351,6 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (yearSelect) yearSelect.value = yearVal;
     }
 
+    // Назначаем обработчик клика для каждого тега жанра
     document.querySelectorAll('.filter-tag').forEach(tag => {
         tag.onclick = function() { toggleGenre(this); }
     });

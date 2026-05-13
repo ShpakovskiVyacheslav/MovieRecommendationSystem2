@@ -22,10 +22,12 @@ app.secret_key = '[k1l8a@\)Z}SQ2aHKCDjxFF–v#34RK'
 EMAIL_ADDRESS = 'sistemarekomendacij@gmail.com'
 APP_PASSWORD = 'gpvuwkwlgvvkspww'
 
+# Инициализация бд
 db_path = os.path.join(os.path.dirname(__file__), 'db', 'database.db')
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
 global_init(db_path)
 
+# Создание папок (проверка наличия)
 static_dir = os.path.join(os.path.dirname(__file__), 'static')
 css_dir = os.path.join(static_dir, 'css')
 uploads_dir = os.path.join(static_dir, 'uploads')
@@ -37,6 +39,7 @@ reset_codes = {}
 
 
 def send_reset_code(email_to, code):
+    """Отправка кода подтверждения на email пользователя"""
     try:
         msg = EmailMessage()
         msg['From'] = EMAIL_ADDRESS
@@ -56,11 +59,14 @@ def send_reset_code(email_to, code):
 
 @app.route('/', methods=['POST', 'GET'])
 def index():
+    """Страница входа. GET - показываем форму, POST - обрабатываем данные пользователя."""
     if request.method == 'GET':
+        # Проверяем наличие cookie "запомнить меня"
         remember_token = request.cookies.get('remember_token')
         if remember_token:
             db_sess = create_session()
             try:
+                # Ищем пользователя по токену
                 user = db_sess.query(User).filter(User.remember_token == remember_token).first()
                 if user:
                     session['user_id'] = user.id
@@ -89,11 +95,13 @@ def index():
                 response = make_response(redirect(f'/main/{user.username}'))
 
                 if remember_me:
+                    # Генерируем токен и сохраняем в БД и cookie
                     token = str(random.randint(10000000, 99999999)) + str(user.id)
                     user.remember_token = token
                     db_sess.commit()
-                    response.set_cookie('remember_token', token, max_age=30 * 24 * 60 * 60)
+                    response.set_cookie('remember_token', token, max_age=30 * 24 * 60 * 60)  # 30 дней
                 else:
+                    # Удаляем cookie, если был
                     response.set_cookie('remember_token', '', expires=0)
                     if user.remember_token:
                         user.remember_token = None
@@ -108,6 +116,7 @@ def index():
 
 @app.route('/main/<username>', methods=['GET'])
 def main_page(username):
+    """Главная страница сайта"""
     db_sess = create_session()
     try:
         user = db_sess.query(User).filter(User.username == username).first()
@@ -115,6 +124,7 @@ def main_page(username):
         if not user:
             return "Пользователь не найден", 404
 
+        # Получаем параметры поиска и фильтрации из URL
         query = request.args.get('query', '')
         page = request.args.get('page', 1, type=int)
         per_page = 15
@@ -124,36 +134,42 @@ def main_page(username):
         selected_rating = request.args.get('rating', 'any')
         selected_years = request.args.get('year', 'all')
 
+        # Сохраняем фильтры в сессию для использования в рекомендациях
         session['filters'] = {
             'genres': genres_str,
             'rating': selected_rating,
             'year': selected_years
         }
 
+        # Базовый запрос: сортировка всех фильмов по рейтнигу
         base_query = db_sess.query(Film).order_by(Film.rating.desc().nullslast())
 
+        # Поиск по названию
         if query:
             lower_query = query.lower()
             relevance = case(
-                (func.lower(Film.name) == lower_query, 0),
-                (func.lower(Film.name).like(f"{lower_query}%"), 1),
-                else_=2
+                (func.lower(Film.name) == lower_query, 0),      # Точное совпадение
+                (func.lower(Film.name).like(f"{lower_query}%"), 1),     # Начинается с поиска
+                else_=2                                                 # Содержит поиск
             )
 
             base_query = db_sess.query(Film).filter(
                 func.lower(Film.name).like(f"%{lower_query}%")
             ).order_by(relevance, Film.rating.desc().nullslast())
 
+        # Фильтр по жанрам
         if selected_genres:
             base_query = base_query.join(FilmGenre).filter(
                 FilmGenre.genre_id.in_(selected_genres)
             ).order_by(Film.rating.desc().nullslast())
 
+        # Фильтр по рейтингу
         if selected_rating != "any":
             base_query = base_query.filter(
                 Film.rating >= float(int(selected_rating))
             ).order_by(Film.rating.desc().nullslast())
 
+        # Фильтр по году
         if selected_years != "all":
             start_year, end_year = map(int, selected_years.split('-'))
             base_query = base_query.filter(
@@ -182,6 +198,7 @@ def main_page(username):
 
 @app.route('/profile/<username>', methods=['GET', 'POST'])
 def profile(username):
+    """Страница профиля пользователя"""
     db_sess = create_session()
     try:
         user = db_sess.query(User).filter(User.username == username).first()
@@ -189,12 +206,14 @@ def profile(username):
         if not user:
             return "Пользователь не найден", 404
 
+        # Обновление аватара
         if request.method == 'POST' and 'avatar' in request.files:
             file = request.files['avatar']
             if file and file.filename:
                 filename = f"{username}_{random.randint(1000, 9999)}.jpg"
                 file.save(os.path.join('static', 'uploads', filename))
 
+                # Удаляем старый аватар
                 old_avatar = user.avatar
                 if old_avatar:
                     old_path = os.path.join('static', 'uploads', old_avatar)
@@ -209,11 +228,13 @@ def profile(username):
         page_not_interested = request.args.get('page_not_interested', 1, type=int)
         per_page = 15
 
+        # Достаём параметры фильтрации из URL
         genres_str = request.args.get('genres', '')
         selected_genres = [g.strip() for g in genres_str.split(',') if g.strip()]
         selected_rating = request.args.get('rating', 'any')
         selected_years = request.args.get('year', 'all')
 
+        # Количество лайков и неинтересных фильмов (для статистики)
         liked_count_total = db_sess.query(UserFilm).filter(
             UserFilm.user_id == user.id,
             UserFilm.status == 'like'
@@ -224,16 +245,19 @@ def profile(username):
             UserFilm.status == 'not_interested'
         ).count()
 
+        # Запрос на избранные фильмы
         favorite_films_query = db_sess.query(Film).join(UserFilm).filter(
             UserFilm.user_id == user.id,
             UserFilm.status == 'like'
         ).order_by(Film.rating.desc().nullslast())
 
+        # Запрос на неинтересные фильмы
         not_interested_films_query = db_sess.query(Film).join(UserFilm).filter(
             UserFilm.user_id == user.id,
             UserFilm.status == 'not_interested'
         ).order_by(Film.rating.desc().nullslast())
 
+        # Применяем фильтры к обеим вкладкам
         if selected_genres:
             favorite_films_query = favorite_films_query.join(FilmGenre).filter(
                 FilmGenre.genre_id.in_(selected_genres)
@@ -287,6 +311,7 @@ def profile(username):
 
 @app.route('/register', methods=['POST', 'GET'])
 def register():
+    """Страница регистрации нового пользователя."""
     error = None
 
     if request.method == 'GET':
@@ -299,21 +324,25 @@ def register():
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
 
+        # Проверка совпадения паролей
         if password != confirm_password:
             error = 'Пароли не совпадают'
             return render_template('register.html', error=error,
                                    email=email, username=username, login=login)
 
+        # Проверка длины имени пользователя
         if len(username) < 3 or len(username) > 20:
             error = 'Имя пользователя должно содержать от 3 до 20 символов'
             return render_template('register.html', error=error,
                                    email=email, username=username, login=login)
 
+        # Проверка длины логина
         if len(login) < 3 or len(login) > 20:
             error = 'Логин должен содержать от 3 до 20 символов'
             return render_template('register.html', error=error,
                                    email=email, username=username, login=login)
 
+        # Проверка сложности пароля
         if not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,16}$', password):
             error = 'Пароль должен содержать 8-16 символов: строчные и заглавные буквы, цифры и спецсимволы (!@#$%^&*)'
             return render_template('register.html', error=error,
@@ -321,6 +350,7 @@ def register():
 
         db_sess = create_session()
         try:
+            # Проверка на существующего пользователя
             existing_user = db_sess.query(User).filter(
                 (User.username == login) | (User.email == email)
             ).first()
@@ -330,6 +360,7 @@ def register():
                 return render_template('register.html', error=error,
                                        email=email, username=username, login=login)
 
+            # Создание нового пользователя
             user = User()
             user.username = login
             user.email = email
@@ -348,6 +379,7 @@ def register():
 
 @app.route('/reset', methods=['POST', 'GET'])
 def reset():
+    """Страница сброса пароля."""
     if request.method == 'GET':
         return render_template('reset_request.html')
     elif request.method == 'POST':
@@ -363,6 +395,7 @@ def reset():
         if not user:
             return "Пользователь с таким email не найден", 404
 
+        # Генерация 6-значного кода
         reset_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
         reset_codes[email] = {'code': reset_code, 'timestamp': time.time()}
 
@@ -374,6 +407,7 @@ def reset():
 
 @app.route('/reset_confirm', methods=['POST'])
 def reset_confirm():
+    """Установка нового пароля пользователя."""
     email = request.form.get('email')
     code = request.form.get('code')
     new_password = request.form.get('new_password')
@@ -382,7 +416,7 @@ def reset_confirm():
     if new_password != confirm_password:
         return "Пароли не совпадают", 400
 
-    # Проверка сложности нового пароля при сбросе
+    # Проверка сложности нового пароля
     if not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,16}$', new_password):
         return "Пароль должен содержать 8-16 символов: строчные и заглавные буквы, цифры и спецсимволы (!@#$%^&*)", 400
 
@@ -390,6 +424,7 @@ def reset_confirm():
     if not stored or stored['code'] != code:
         return "Неверный код", 400
 
+    # Код действителен 10 минут
     if time.time() - stored['timestamp'] > 600:
         return "Код истёк. Запросите новый", 400
 
@@ -409,11 +444,13 @@ def reset_confirm():
 
 @app.route('/api/favorites/<int:film_id>', methods=['POST', 'DELETE'])
 def add_to_favorites(film_id):
+    """API для добавления/удаления фильма в избранное/неинтересное."""
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Необходимо войти в систему'}), 401
 
     db_sess = create_session()
     try:
+        # DELETE - удаление из избранного или из неинтересных
         if request.method == 'DELETE':
             user_film = db_sess.query(UserFilm).filter(
                 UserFilm.user_id == session['user_id'],
@@ -424,6 +461,7 @@ def add_to_favorites(film_id):
                 db_sess.commit()
             return jsonify({'success': True})
 
+        # POST - добавление или обновление статуса
         data = request.get_json()
         status = data.get('status', 'like')
 
@@ -437,8 +475,10 @@ def add_to_favorites(film_id):
         ).first()
 
         if user_film:
+            # Обновляем статус существующей записи
             user_film.status = status
         else:
+            # Создаём новую запись
             user_film = UserFilm(
                 user_id=session['user_id'],
                 film_id=film_id,
@@ -454,6 +494,7 @@ def add_to_favorites(film_id):
 
 @app.route('/remove_favorite/<username>/<int:film_id>', methods=['GET'])
 def remove_favorite(username, film_id):
+    """Старый способ удаления (с перезагрузкой страницы). Используется в профиле."""
     if 'user_id' not in session:
         return redirect('/')
 
@@ -475,6 +516,7 @@ def remove_favorite(username, film_id):
 
 @app.route('/api/user_films', methods=['GET'])
 def get_user_films():
+    """API для получения всех фильмов пользователя с их статусами (лайк/не интересно)."""
     if 'user_id' not in session:
         return jsonify([])
 
@@ -498,15 +540,18 @@ def get_user_films():
 
 @app.route('/api/get_recommendations', methods=['GET'])
 def get_recommendations():
+    """API для получения персональных рекомендаций фильмов."""
     if 'user_id' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
 
     try:
+        # Берём фильтры из сессии (последние выбранные пользователем)
         filters = session.get('filters', {})
         selected_genres = filters.get('genres', '')
         selected_rating = filters.get('rating', 'any')
         selected_years = filters.get('year', 'all')
 
+        # Запрос к сервису рекомендаций (rec.py на порту 5001)
         response = requests.get(
             'http://127.0.0.1:5001/api/recommendations',
             params={'user_id': session['user_id']},
@@ -521,11 +566,14 @@ def get_recommendations():
                 try:
                     recommended_ml_ids = data['recommendations']
 
+                    # Исключаем фильмы, которые пользователь уже оценил
                     user_films = db_sess.query(UserFilm).filter(
                         UserFilm.user_id == session['user_id']
                     ).all()
                     excluded_film_ids = {uf.film_id for uf in user_films}
 
+                    # SQLite имеет ограничение на количество параметров в IN
+                    # Разбиваем запрос на части по 500
                     chunk_size = 500
                     all_films = []
 
@@ -536,6 +584,7 @@ def get_recommendations():
                         ).all()
                         all_films.extend(films_chunk)
 
+                    # Словарь для быстрого поиска фильма по ml_id
                     film_dict = {film.ml_id: film for film in all_films}
 
                     result = []
@@ -544,6 +593,7 @@ def get_recommendations():
                         if not film or film.id in excluded_film_ids:
                             continue
 
+                        # Применяем фильтры из сессии
                         if selected_genres:
                             film_genre_ids = [str(i.id) for i in film.genres]
                             if not any(i in selected_genres for i in film_genre_ids):
@@ -564,6 +614,7 @@ def get_recommendations():
                                     continue
                             except ValueError:
                                 pass
+
                         genres = [{'id': g.id, 'name': g.name} for g in film.genres]
                         result.append({
                             'id': film.id,
@@ -604,6 +655,7 @@ def get_recommendations():
 
 @app.route('/api/film/<int:film_id>', methods=['GET'])
 def get_film_details(film_id):
+    """API для получения подробной информации с описанием."""
     if 'user_id' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
 
@@ -630,6 +682,8 @@ def get_film_details(film_id):
 
 @app.route('/logout')
 def logout():
+    """Выход из системы: очистка сессии и удаление cookie запомнить меня."""
+    # Удаляем токен "запомнить меня" из БД
     if 'user_id' in session:
         db_sess = create_session()
         try:
@@ -640,6 +694,7 @@ def logout():
         finally:
             db_sess.close()
 
+    # Очищаем сессию и удаляем cookie
     session.clear()
     response = make_response(redirect('/'))
     response.set_cookie('remember_token', '', expires=0)

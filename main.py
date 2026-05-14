@@ -70,8 +70,8 @@ def index():
                 user = db_sess.query(User).filter(User.remember_token == remember_token).first()
                 if user:
                     session['user_id'] = user.id
-                    session['username'] = user.username
-                    return redirect(f'/main/{user.username}')
+                    session['login'] = user.login
+                    return redirect(f'/main/{user.login}')
             finally:
                 db_sess.close()
         return render_template('login.html', error=None)
@@ -86,20 +86,20 @@ def index():
 
         db_sess = create_session()
         try:
-            user = db_sess.query(User).filter(User.username == login).first()
+            user = db_sess.query(User).filter(User.login == login).first()
 
             if user and user.check_password(password):
                 session['user_id'] = user.id
-                session['username'] = user.username
+                session['login'] = user.login
 
-                response = make_response(redirect(f'/main/{user.username}'))
+                response = make_response(redirect(f'/main/{user.login}'))
 
                 if remember_me:
                     # Генерируем токен и сохраняем в БД и cookie
                     token = str(random.randint(10000000, 99999999)) + str(user.id)
                     user.remember_token = token
                     db_sess.commit()
-                    response.set_cookie('remember_token', token, max_age=30 * 24 * 60 * 60)  # 30 дней
+                    response.set_cookie('remember_token', token, max_age=30 * 24 * 60 * 60)
                 else:
                     # Удаляем cookie, если был
                     response.set_cookie('remember_token', '', expires=0)
@@ -113,13 +113,11 @@ def index():
         finally:
             db_sess.close()
 
-
-@app.route('/main/<username>', methods=['GET'])
-def main_page(username):
-    """Главная страница сайта"""
+@app.route('/main/<login>', methods=['GET'])
+def main_page(login):
     db_sess = create_session()
     try:
-        user = db_sess.query(User).filter(User.username == username).first()
+        user = db_sess.query(User).filter(User.login == login).first()
 
         if not user:
             return "Пользователь не найден", 404
@@ -148,9 +146,9 @@ def main_page(username):
         if query:
             lower_query = query.lower()
             relevance = case(
-                (func.lower(Film.name) == lower_query, 0),      # Точное совпадение
-                (func.lower(Film.name).like(f"{lower_query}%"), 1),     # Начинается с поиска
-                else_=2                                                 # Содержит поиск
+                (func.lower(Film.name) == lower_query, 0),
+                (func.lower(Film.name).like(f"{lower_query}%"), 1),
+                else_=2
             )
 
             base_query = db_sess.query(Film).filter(
@@ -181,7 +179,7 @@ def main_page(username):
         films = base_query.offset((page - 1) * per_page).limit(per_page).all()
 
         return render_template('main.html',
-                               login=username,
+                               login=login,
                                username=user.username,
                                query=query,
                                avatar_url=user.avatar,
@@ -195,13 +193,11 @@ def main_page(username):
     finally:
         db_sess.close()
 
-
-@app.route('/profile/<username>', methods=['GET', 'POST'])
-def profile(username):
-    """Страница профиля пользователя"""
+@app.route('/profile/<login>', methods=['GET', 'POST'])
+def profile(login):
     db_sess = create_session()
     try:
-        user = db_sess.query(User).filter(User.username == username).first()
+        user = db_sess.query(User).filter(User.login == login).first()
 
         if not user:
             return "Пользователь не найден", 404
@@ -210,7 +206,7 @@ def profile(username):
         if request.method == 'POST' and 'avatar' in request.files:
             file = request.files['avatar']
             if file and file.filename:
-                filename = f"{username}_{random.randint(1000, 9999)}.jpg"
+                filename = f"{login}_{random.randint(1000, 9999)}.jpg"
                 file.save(os.path.join('static', 'uploads', filename))
 
                 # Удаляем старый аватар
@@ -222,7 +218,7 @@ def profile(username):
 
                 user.avatar = filename
                 db_sess.commit()
-                return redirect(f'/profile/{username}')
+                return redirect(f'/profile/{login}')
 
         page_liked = request.args.get('page_liked', 1, type=int)
         page_not_interested = request.args.get('page_not_interested', 1, type=int)
@@ -295,7 +291,7 @@ def profile(username):
             per_page).all()
 
         return render_template('profile.html',
-                               login=username,
+                               login=login,
                                user=user,
                                liked_count_total=liked_count_total,
                                not_interested_count_total=not_interested_count_total,
@@ -352,7 +348,7 @@ def register():
         try:
             # Проверка на существующего пользователя
             existing_user = db_sess.query(User).filter(
-                (User.username == login) | (User.email == email)
+                (User.login == login) | (User.email == email)
             ).first()
 
             if existing_user:
@@ -362,7 +358,8 @@ def register():
 
             # Создание нового пользователя
             user = User()
-            user.username = login
+            user.login = login
+            user.username = username
             user.email = email
             user.set_password(password)
 
@@ -370,9 +367,9 @@ def register():
             db_sess.commit()
 
             session['user_id'] = user.id
-            session['username'] = user.username
+            session['login'] = user.login
 
-            return redirect(f'/main/{user.username}')
+            return redirect(f'/main/{user.login}')
         finally:
             db_sess.close()
 
@@ -386,14 +383,14 @@ def reset():
         email = request.form.get('email')
 
         if not email:
-            return "Введите email", 400
+            return render_template('reset_request.html', error='Введите email')
 
         db_sess = create_session()
         user = db_sess.query(User).filter(User.email == email).first()
         db_sess.close()
 
         if not user:
-            return "Пользователь с таким email не найден", 404
+            return render_template('reset_request.html', error='Пользователь с таким email не найден', email=email)
 
         # Генерация 6-значного кода
         reset_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
@@ -402,7 +399,7 @@ def reset():
         if send_reset_code(email, reset_code):
             return render_template('reset_verify.html', email=email)
         else:
-            return "Ошибка отправки письма. Попробуйте позже.", 500
+            return render_template('reset_request.html', error='Ошибка отправки письма. Попробуйте позже.', email=email)
 
 
 @app.route('/reset_confirm', methods=['POST'])
@@ -491,10 +488,8 @@ def add_to_favorites(film_id):
     finally:
         db_sess.close()
 
-
-@app.route('/remove_favorite/<username>/<int:film_id>', methods=['GET'])
-def remove_favorite(username, film_id):
-    """Старый способ удаления (с перезагрузкой страницы). Используется в профиле."""
+@app.route('/remove_favorite/<login>/<int:film_id>', methods=['GET'])
+def remove_favorite(login, film_id):
     if 'user_id' not in session:
         return redirect('/')
 
@@ -509,7 +504,7 @@ def remove_favorite(username, film_id):
             db_sess.delete(user_film)
             db_sess.commit()
 
-        return redirect(f'/profile/{username}')
+        return redirect(f'/profile/{login}')
     finally:
         db_sess.close()
 

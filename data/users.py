@@ -9,7 +9,8 @@ class User(SqlAlchemyBase):
     __tablename__ = "users"
 
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
-    username = sa.Column(sa.String, nullable=False, unique=True)
+    login = sa.Column(sa.String, nullable=False, unique=True)
+    username = sa.Column(sa.String, nullable=True)
     email = sa.Column(sa.String, nullable=False, unique=True)
     hashed_password = sa.Column(sa.String, nullable=False)
     avatar = sa.Column(sa.String, nullable=True)

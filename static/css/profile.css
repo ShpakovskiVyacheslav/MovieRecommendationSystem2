@@ -68,16 +68,21 @@ body {
 }
 
 .profile-username {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: bold;
     color: #1a1a2e;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     word-break: break-word;
     overflow-wrap: break-word;
 }
+.profile-login {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
 
 .profile-email {
-    color: #555;
+    color: #666;
     margin-bottom: 20px;
     word-break: break-word;
     overflow-wrap: break-word;
@@ -444,13 +449,13 @@ body {
     display: block;
     width: 100%;
     margin-top: auto;
-    padding: 10px 12px;
+    padding: 8px 12px;
     background-color: #ff6b6b;
     color: white;
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     text-align: center;
     text-decoration: none;

@@ -154,3 +154,8 @@ form.login_form {
     cursor: pointer;
     color: #555;
 }
+
+.invalid-email {
+    border-color: #dc3545;
+    background-color: #f8d7da;
+}

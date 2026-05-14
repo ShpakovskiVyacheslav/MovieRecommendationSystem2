@@ -325,6 +325,7 @@ function handleFilmCardClick(event) {
 // DOMContentLoaded срабатывает когда HTML полностью загружен и распарсен
 document.addEventListener('DOMContentLoaded', () => {
     loadRecommendations();
+    loadButtonStates();
 
     const filmsGrid = document.getElementById('filmsGrid');
     if (filmsGrid) {

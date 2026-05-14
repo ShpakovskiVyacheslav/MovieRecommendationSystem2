@@ -300,7 +300,10 @@ def profile(login):
                                page_liked=page_liked,
                                total_pages_liked=total_pages_liked,
                                page_not_interested=page_not_interested,
-                               total_pages_not_interested=total_pages_not_interested)
+                               total_pages_not_interested=total_pages_not_interested,
+                               selected_rating=selected_rating,
+                               selected_years=selected_years,
+                               selected_genres=genres_str)
     finally:
         db_sess.close()
 

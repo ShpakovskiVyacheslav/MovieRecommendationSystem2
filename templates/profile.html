@@ -116,7 +116,7 @@
 
             <div class="profile-info-section">
                 <div class="profile-username">{{ user.username }}</div>
-                <div class="profile-login">{{ user.login }}</div>
+                <div class="profile-login">Логин: {{ user.login }}</div>
                 <div class="profile-email">{{ user.email }}</div>
 
                 <div class="profile-stats">
@@ -176,23 +176,23 @@
                 {% if total_pages_liked > 1 %}
                 <div class="pagination">
                     {% if page_liked > 1 %}
-                    <a href="?page_liked={{ page_liked - 1 }}&page_not_interested={{ page_not_interested }}&rating={{ rating }}&year={{ year }}&genres={{ genres }}">Предыдущая</a>
+                    <a href="?page_liked={{ page_liked - 1 }}&page_not_interested={{ page_not_interested }}&rating={{ selected_rating }}&year={{ selected_years }}&genres={{ selected_genres }}">← Предыдущая</a>
                     {% else %}
-                    <span class="disabled">Предыдущая</span>
+                    <span class="disabled">← Предыдущая</span>
                     {% endif %}
 
                     {% for p in range(1, total_pages_liked + 1) %}
                         {% if p == page_liked %}
                         <span class="active">{{ p }}</span>
                         {% elif p <= 3 or p > total_pages_liked - 3 or (p >= page_liked - 2 and p <= page_liked + 2) %}
-                        <a href="?page_liked={{ p }}&page_not_interested={{ page_not_interested }}&rating={{ rating }}&year={{ year }}&genres={{ genres }}">{{ p }}</a>
+                        <a href="?page_liked={{ p }}&page_not_interested={{ page_not_interested }}&rating={{ selected_rating }}&year={{ selected_years }}&genres={{ selected_genres }}">{{ p }}</a>
                         {% endif %}
                     {% endfor %}
 
                     {% if page_liked < total_pages_liked %}
-                    <a href="?page_liked={{ page_liked + 1 }}&page_not_interested={{ page_not_interested }}&rating={{ rating }}&year={{ year }}&genres={{ genres }}">Следующая</a>
+                    <a href="?page_liked={{ page_liked + 1 }}&page_not_interested={{ page_not_interested }}&rating={{ selected_rating }}&year={{ selected_years }}&genres={{ selected_genres }}">Следующая →</a>
                     {% else %}
-                    <span class="disabled">Следующая</span>
+                    <span class="disabled">Следующая →</span>
                     {% endif %}
                 </div>
                 <div class="pagination-info">
@@ -245,23 +245,23 @@
                 {% if total_pages_not_interested > 1 %}
                 <div class="pagination">
                     {% if page_not_interested > 1 %}
-                    <a href="?page_liked={{ page_liked }}&page_not_interested={{ page_not_interested - 1 }}&rating={{ rating }}&year={{ year }}&genres={{ genres }}">Предыдущая</a>
+                    <a href="?page_liked={{ page_liked }}&page_not_interested={{ page_not_interested - 1 }}&rating={{ selected_rating }}&year={{ selected_years }}&genres={{ selected_genres }}">← Предыдущая</a>
                     {% else %}
-                    <span class="disabled">Предыдущая</span>
+                    <span class="disabled">← Предыдущая</span>
                     {% endif %}
 
                     {% for p in range(1, total_pages_not_interested + 1) %}
                         {% if p == page_not_interested %}
                         <span class="active">{{ p }}</span>
                         {% elif p <= 3 or p > total_pages_not_interested - 3 or (p >= page_not_interested - 2 and p <= page_not_interested + 2) %}
-                        <a href="?page_liked={{ page_liked }}&page_not_interested={{ p }}&rating={{ rating }}&year={{ year }}&genres={{ genres }}">{{ p }}</a>
+                        <a href="?page_liked={{ page_liked }}&page_not_interested={{ p }}&rating={{ selected_rating }}&year={{ selected_years }}&genres={{ selected_genres }}">{{ p }}</a>
                         {% endif %}
                     {% endfor %}
 
                     {% if page_not_interested < total_pages_not_interested %}
-                    <a href="?page_liked={{ page_liked }}&page_not_interested={{ page_not_interested + 1 }}&rating={{ rating }}&year={{ year }}&genres={{ genres }}">Следующая</a>
+                    <a href="?page_liked={{ page_liked }}&page_not_interested={{ page_not_interested + 1 }}&rating={{ selected_rating }}&year={{ selected_years }}&genres={{ selected_genres }}">Следующая →</a>
                     {% else %}
-                    <span class="disabled">Следующая</span>
+                    <span class="disabled">Следующая →</span>
                     {% endif %}
                 </div>
                 <div class="pagination-info">

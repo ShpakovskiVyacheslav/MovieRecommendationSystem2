@@ -29,9 +29,9 @@ db_path = os.path.join(parent_dir, 'db', 'database.db')
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
 global_init(db_path)
 
-movie_vectors = np.load('movie_vectors.npy')
+movie_vectors = np.load(os.path.join(current_dir, 'movie_vectors.npy'))
 
-with open('movie_id_mapping.json', 'r', encoding='utf-8') as f:
+with open(os.path.join(current_dir, 'movie_id_mapping.json'), 'r', encoding='utf-8') as f:
     inner_to_raw_movie_str = json.load(f)
     inner_to_raw_movie = {int(k): v for k, v in inner_to_raw_movie_str.items()}
 
@@ -96,7 +96,6 @@ class Recommendations(Resource):
             }
         finally:
             db_sess.close()
-
 
 
 api.add_resource(Recommendations, "/api/recommendations")

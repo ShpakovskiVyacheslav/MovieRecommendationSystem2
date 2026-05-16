@@ -29,6 +29,25 @@ body {
 .profile-avatar-section {
     text-align: center;
 }
+.profile-avatar-placeholder {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background-color: #3CB371;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 64px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: opacity 0.3s;
+}
+
+.profile-avatar-placeholder:hover {
+    opacity: 0.8;
+}
 
 .profile-avatar {
     width: 150px;

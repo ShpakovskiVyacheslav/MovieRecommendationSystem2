@@ -105,8 +105,13 @@
             <div class="profile-avatar-section">
                 <form method="post" enctype="multipart/form-data" id="avatar-form">
                     <label for="avatar-input">
-                        <img src="{% if user.avatar %}/static/uploads/{{ user.avatar }}{% else %}https://via.placeholder.com/150{% endif %}"
-                             alt="Avatar" class="profile-avatar">
+                        {% if user.avatar %}
+                            <img src="/static/uploads/{{ user.avatar }}" alt="Avatar" class="profile-avatar">
+                        {% else %}
+                            <div class="profile-avatar-placeholder">
+                                {{ user.username[0].upper() }}
+                            </div>
+                        {% endif %}
                     </label>
                     <input type="file" name="avatar" id="avatar-input" accept="image/*" style="display: none;"
                            onchange="document.getElementById('avatar-form').submit()">

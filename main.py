@@ -230,28 +230,21 @@ def profile(login):
         selected_rating = request.args.get('rating', 'any')
         selected_years = request.args.get('year', 'all')
 
-        # Количество лайков и неинтересных фильмов (для статистики)
-        liked_count_total = db_sess.query(UserFilm).filter(
-            UserFilm.user_id == user.id,
-            UserFilm.status == 'like'
-        ).count()
-
-        not_interested_count_total = db_sess.query(UserFilm).filter(
-            UserFilm.user_id == user.id,
-            UserFilm.status == 'not_interested'
-        ).count()
-
         # Запрос на избранные фильмы
         favorite_films_query = db_sess.query(Film).join(UserFilm).filter(
             UserFilm.user_id == user.id,
             UserFilm.status == 'like'
         ).order_by(Film.rating.desc().nullslast())
 
+        liked_count_total = favorite_films_query.count()
+
         # Запрос на неинтересные фильмы
         not_interested_films_query = db_sess.query(Film).join(UserFilm).filter(
             UserFilm.user_id == user.id,
             UserFilm.status == 'not_interested'
         ).order_by(Film.rating.desc().nullslast())
+
+        not_interested_count_total = not_interested_films_query.count()
 
         # Применяем фильтры к обеим вкладкам
         if selected_genres:
@@ -549,7 +542,7 @@ def get_recommendations():
         selected_rating = filters.get('rating', 'any')
         selected_years = filters.get('year', 'all')
 
-        # Запрос к сервису рекомендаций (rec.py на порту 5001)
+        # Запрос к сервису рекомендаций
         response = requests.get(
             'http://127.0.0.1:5001/api/recommendations',
             params={'user_id': session['user_id']},

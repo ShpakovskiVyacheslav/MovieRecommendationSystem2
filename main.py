@@ -115,6 +115,10 @@ def index():
 
 @app.route('/main/<login>', methods=['GET'])
 def main_page(login):
+
+    if 'login' not in session or session['login'] != login:
+        return redirect('/')
+
     db_sess = create_session()
     try:
         user = db_sess.query(User).filter(User.login == login).first()
@@ -195,6 +199,10 @@ def main_page(login):
 
 @app.route('/profile/<login>', methods=['GET', 'POST'])
 def profile(login):
+
+    if 'login' not in session or session['login'] != login:
+        return redirect('/')
+
     db_sess = create_session()
     try:
         user = db_sess.query(User).filter(User.login == login).first()
@@ -487,6 +495,9 @@ def add_to_favorites(film_id):
 @app.route('/remove_favorite/<login>/<int:film_id>', methods=['GET'])
 def remove_favorite(login, film_id):
     if 'user_id' not in session:
+        return redirect('/')
+
+    if 'login' not in session or session['login'] != login:
         return redirect('/')
 
     db_sess = create_session()
